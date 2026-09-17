@@ -67,13 +67,21 @@ links like `/sign/c3` resolve instead of 404ing.
 1. Push this repo to GitHub.
 2. In Netlify: **Add new site → Import an existing project**, pick the repo.
    The settings are read from `netlify.toml`, so no manual config is needed.
-3. **Domain management → Add a custom domain** → `richarddesign.in`.
-4. Point DNS at Netlify, either by:
-   - delegating to Netlify DNS (change nameservers at your registrar), or
-   - keeping your DNS and adding an `A` record for the apex domain to
-     Netlify's load balancer IP plus a `CNAME` for `www` → your
-     `*.netlify.app` subdomain. Netlify shows the current values during setup.
-5. HTTPS is provisioned automatically via Let's Encrypt once DNS resolves.
+3. **Domain management → Add a domain** → `countinvoice.richadesign.in`.
+   A subdomain keeps the apex free for a portfolio index, and avoids the
+   apex-`CNAME` restriction in the DNS spec.
+4. At the registrar (GoDaddy), add one record — leave the existing apex
+   records alone:
+
+   | Type    | Name           | Value                   |
+   | ------- | -------------- | ----------------------- |
+   | `CNAME` | `countinvoice` | `<site>.netlify.app`    |
+
+   The name is just `countinvoice`; GoDaddy appends the zone itself. The
+   value is a bare hostname, with no scheme and no trailing slash.
+5. HTTPS is provisioned automatically via Let's Encrypt once DNS resolves
+   (usually 5–30 minutes). Check with
+   `dig countinvoice.richadesign.in CNAME +short`.
 
 ## Scope
 
