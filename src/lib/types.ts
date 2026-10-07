@@ -19,6 +19,25 @@ export interface Milestone {
   pct: number;
 }
 
+/**
+ * An agreement file uploaded instead of the generated document. Metadata lives
+ * in app state; the file itself lives in IndexedDB under `id` (see files.ts).
+ */
+export interface AgreementFile {
+  /** IndexedDB key. Empty when `url` points at a static file (sample data). */
+  id: string;
+  url?: string;
+  name: string;
+  size: number;
+  mime: string;
+  uploadedAt: string;
+  providedBy: 'freelancer' | 'client';
+}
+
+export interface ClientProposal extends AgreementFile {
+  note?: string;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -34,6 +53,12 @@ export interface Client {
   agreementSentAt?: string;
   agreementSignedAt?: string;
   signatureName?: string;
+  /** Present when an uploaded file replaces the generated agreement. */
+  agreementFile?: AgreementFile;
+  /** Signed before it reached CountInvoice. */
+  signedOutside?: boolean;
+  /** The client's own agreement, sent from the share link, awaiting review. */
+  clientProposal?: ClientProposal;
 }
 
 export interface Task {

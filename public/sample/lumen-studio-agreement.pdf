@@ -1,0 +1,53 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 1088 >>
+stream
+BT
+/F2 20 Tf 1 0 0 1 72 760 Tm (Design Services Agreement) Tj
+/F1 11 Tf 1 0 0 1 72 730 Tm (Between Lumen Studio GmbH \(Berlin\) and the Contractor) Tj
+/F1 11 Tf 1 0 0 1 72 708 Tm (Signed 3 March 2026. Sample document for the CountInvoice prototype.) Tj
+/F1 11 Tf 1 0 0 1 72 686 Tm () Tj
+/F2 12 Tf 1 0 0 1 72 664 Tm (1. Scope) Tj
+/F1 11 Tf 1 0 0 1 72 642 Tm (Ongoing brand and product design, around 15 hours per month.) Tj
+/F2 12 Tf 1 0 0 1 72 620 Tm (2. Fees) Tj
+/F1 11 Tf 1 0 0 1 72 598 Tm (EUR 65 per hour, invoiced monthly against logged hours.) Tj
+/F2 12 Tf 1 0 0 1 72 576 Tm (3. Payment) Tj
+/F1 11 Tf 1 0 0 1 72 554 Tm (50% upfront each month, 50% on delivery. Net 14 days.) Tj
+/F2 12 Tf 1 0 0 1 72 532 Tm (4. Term) Tj
+/F1 11 Tf 1 0 0 1 72 510 Tm (Rolling monthly. Either party may end it with 30 days' notice.) Tj
+/F2 12 Tf 1 0 0 1 72 488 Tm (5. Governing law) Tj
+/F1 11 Tf 1 0 0 1 72 466 Tm (Laws of Portugal, the contractor's place of business.) Tj
+/F1 11 Tf 1 0 0 1 72 444 Tm () Tj
+/F1 11 Tf 1 0 0 1 72 422 Tm (Signed: M. Weber, Lumen Studio            Signed: Contractor) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000001391 00000 n 
+0000001461 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1536
+%%EOF

@@ -1,11 +1,35 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AgreementDoc } from '../components/AgreementDoc';
+import {
+  DownloadButton,
+  OpenFileLink,
+  StoredFileCard,
+  UploadedAgreementDoc,
+} from '../components/AgreementFiles';
 import { Icon } from '../components/Icon';
 import { Card, EmptyState, Pill, Topbar } from '../components/ui';
 import { RowActions } from './Clients';
 import { fmtDate } from '../lib/format';
 import { useSelectors, useStore } from '../lib/hooks';
+import type { Client } from '../lib/types';
+
+function agreementSource(c: Client): string {
+  if (!c.agreementFile) return 'Drafted by agent';
+  return c.agreementFile.providedBy === 'client' ? "Client's agreement" : 'Uploaded by you';
+}
+
+function lastActivity(c: Client): string {
+  if (c.clientProposal) return `${c.name} sent their own agreement`;
+  if (c.signedOutside && c.agreementSignedAt) {
+    return `Signed outside CountInvoice ${fmtDate(c.agreementSignedAt)}`;
+  }
+  if (c.agreementSignedAt) return `Signed ${fmtDate(c.agreementSignedAt)}`;
+  if (c.status === 'active' || c.status === 'overdue') return 'Signed';
+  if (c.agreementSentAt) return `Sent ${fmtDate(c.agreementSentAt)}`;
+  if (c.status === 'sent') return 'Sent';
+  return 'Not sent yet';
+}
 
 export function Agreements() {
   const { state, dispatch, toast } = useStore();
@@ -28,13 +52,21 @@ export function Agreements() {
             icon={<Icon name="sign" />}
             title="No agreements yet"
             action={
-              <button className="btn btn-primary" onClick={() => navigate('/clients/new')}>
-                <Icon name="sign" /> Draft your first agreement
-              </button>
+              <div className="empty-actions">
+                <button className="btn btn-primary" onClick={() => navigate('/clients/new')}>
+                  <Icon name="sign" /> Draft your first agreement
+                </button>
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => navigate('/clients/new?agreement=upload')}
+                >
+                  <Icon name="upload" /> Upload an existing agreement
+                </button>
+              </div>
             }
           >
-            Every client starts with a drafted agreement — country-specific governing law, payment
-            milestones, and a signature flow, generated for you.
+            Your agent drafts one with country-specific governing law, payment milestones and a
+            signature flow. Already have an agreement? Upload it instead.
           </EmptyState>
         </div>
       </>
@@ -46,9 +78,17 @@ export function Agreements() {
       <Topbar
         title="Agreements"
         actions={
-          <button className="btn btn-primary" onClick={() => navigate('/clients/new')}>
-            <Icon name="sign" /> Draft new agreement
-          </button>
+          <>
+            <button
+              className="btn btn-ghost"
+              onClick={() => navigate('/clients/new?agreement=upload')}
+            >
+              <Icon name="upload" /> Upload existing
+            </button>
+            <button className="btn btn-primary" onClick={() => navigate('/clients/new')}>
+              <Icon name="sign" /> Draft new agreement
+            </button>
+          </>
         }
       />
       <div className="content">
@@ -58,6 +98,7 @@ export function Agreements() {
               <tr>
                 <th>Client</th>
                 <th>Client location</th>
+                <th>Source</th>
                 <th>Payment terms</th>
                 <th>Last activity</th>
                 <th>Status</th>
@@ -66,15 +107,7 @@ export function Agreements() {
             </thead>
             <tbody>
               {state.clients.map((c) => {
-                const dateNote = c.agreementSignedAt
-                  ? `Signed ${fmtDate(c.agreementSignedAt)}`
-                  : c.status === 'active' || c.status === 'overdue'
-                    ? 'Signed'
-                    : c.agreementSentAt
-                      ? `Sent ${fmtDate(c.agreementSentAt)}`
-                      : c.status === 'sent'
-                        ? 'Sent'
-                        : 'Not sent yet';
+                const dateNote = lastActivity(c);
                 return (
                   <tr
                     key={c.id}
@@ -85,6 +118,7 @@ export function Agreements() {
                       <strong>{c.name}</strong>
                     </td>
                     <td>{c.country}</td>
+                    <td style={{ color: 'var(--muted)' }}>{agreementSource(c)}</td>
                     <td>{c.milestones.map((m) => `${m.label} ${m.pct}%`).join(' / ')}</td>
                     <td style={{ color: 'var(--muted)' }}>{dateNote}</td>
                     <td>
@@ -139,6 +173,24 @@ export function AgreementDetail() {
     toast(`Agreement emailed to ${client!.email || client!.name}`);
   }
 
+  function switchToDrafted() {
+    dispatch({ type: 'removeAgreementFile', id: client!.id });
+    toast('Switched back to the drafted agreement.');
+  }
+
+  function acceptProposal() {
+    dispatch({ type: 'acceptClientProposal', id: client!.id });
+    toast(`Using ${client!.name}'s agreement. Sent back for signature.`);
+  }
+
+  function keepMine() {
+    dispatch({ type: 'declineClientProposal', id: client!.id });
+    toast(`Kept your agreement. ${client!.name} can still sign it.`);
+  }
+
+  const uploaded = client.agreementFile;
+  const proposal = client.clientProposal;
+
   return (
     <>
       <Topbar
@@ -146,9 +198,27 @@ export function AgreementDetail() {
         title={client.name}
         actions={
           <>
-            <button className="btn" onClick={() => window.print()}>
-              <Icon name="print" /> Print / save PDF
-            </button>
+            {client.status === 'draft' ? (
+              uploaded ? (
+                <button className="btn btn-ghost" onClick={switchToDrafted}>
+                  <Icon name="sign" /> Use drafted agreement
+                </button>
+              ) : (
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => navigate(`/agreement/${client.id}/upload`)}
+                >
+                  <Icon name="upload" /> Upload instead
+                </button>
+              )
+            ) : null}
+            {uploaded ? (
+              <DownloadButton file={uploaded} />
+            ) : (
+              <button className="btn" onClick={() => window.print()}>
+                <Icon name="print" /> Print / save PDF
+              </button>
+            )}
             {client.status === 'draft' ? (
               <button className="btn btn-primary" onClick={share}>
                 <Icon name="mail" /> Share with client
@@ -163,7 +233,35 @@ export function AgreementDetail() {
           <Link to={`/clients/${client.id}`}>← {client.name}</Link>
         </div>
 
-        {client.status === 'draft' ? (
+        {proposal ? (
+          <div className="share-strip share-strip-pending share-strip-stack no-print">
+            <div>
+              <strong>
+                {client.name} sent their own agreement on {fmtDate(proposal.uploadedAt)}.
+              </strong>
+              <span> Use it instead of yours, or keep yours and let them sign it.</span>
+            </div>
+            {proposal.note ? (
+              <blockquote className="proposal-note">{proposal.note}</blockquote>
+            ) : null}
+            <StoredFileCard
+              file={proposal}
+              extra={
+                <OpenFileLink file={proposal}>
+                  <Icon name="external" /> Open preview
+                </OpenFileLink>
+              }
+            />
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button className="btn btn-sm btn-primary" onClick={acceptProposal}>
+                <Icon name="check" /> Accept and send for signature
+              </button>
+              <button className="btn btn-sm btn-ghost" onClick={keepMine}>
+                Keep mine
+              </button>
+            </div>
+          </div>
+        ) : client.status === 'draft' ? (
           <div className="share-strip no-print">
             <div>
               <strong>Not sent yet.</strong>
@@ -178,7 +276,9 @@ export function AgreementDetail() {
         ) : client.status === 'sent' ? (
           <div className="share-strip share-strip-pending no-print">
             <div>
-              <strong>Sent{client.agreementSentAt ? ` on ${fmtDate(client.agreementSentAt)}` : ''}.</strong>
+              <strong>
+                Sent{client.agreementSentAt ? ` on ${fmtDate(client.agreementSentAt)}` : ''}.
+              </strong>
               <span>
                 {' '}
                 Emailed to {client.email || client.name} — waiting on them to review and sign.
@@ -188,10 +288,7 @@ export function AgreementDetail() {
               <button className="btn btn-sm" onClick={copyLink}>
                 <Icon name="link" /> Copy share link
               </button>
-              <button
-                className="btn btn-sm"
-                onClick={() => navigate(`/sign/${client.id}/preview`)}
-              >
+              <button className="btn btn-sm" onClick={() => navigate(`/sign/${client.id}/preview`)}>
                 <Icon name="file" /> Preview client view
               </button>
             </div>
@@ -199,27 +296,51 @@ export function AgreementDetail() {
         ) : (
           <div className="share-strip share-strip-done no-print">
             <div>
-              <strong>
-                Signed{client.agreementSignedAt ? ` on ${fmtDate(client.agreementSignedAt)}` : ''}.
-              </strong>
-              <span>
-                {' '}
-                {client.signatureName
-                  ? `${client.signatureName} accepted these terms on behalf of ${client.name}.`
-                  : `${client.name} has agreed to these terms.`}
-              </span>
+              {client.signedOutside ? (
+                <>
+                  <strong>
+                    Signed outside CountInvoice
+                    {client.agreementSignedAt ? ` on ${fmtDate(client.agreementSignedAt)}` : ''}
+                    {client.signatureName ? ` by ${client.signatureName}` : ''}.
+                  </strong>
+                  <span> Already in effect, so there's nothing to send.</span>
+                </>
+              ) : (
+                <>
+                  <strong>
+                    Signed
+                    {client.agreementSignedAt ? ` on ${fmtDate(client.agreementSignedAt)}` : ''}.
+                  </strong>
+                  <span>
+                    {' '}
+                    {client.signatureName
+                      ? `${client.signatureName} accepted these terms on behalf of ${client.name}.`
+                      : `${client.name} has agreed to these terms.`}
+                  </span>
+                </>
+              )}
             </div>
-            <button className="btn btn-sm" onClick={copyLink}>
-              <Icon name="link" /> Copy share link
-            </button>
+            {client.signedOutside ? null : (
+              <button className="btn btn-sm" onClick={copyLink}>
+                <Icon name="link" /> Copy share link
+              </button>
+            )}
           </div>
         )}
 
-        <AgreementDoc
-          client={client}
-          asClient={false}
-          freelancerCountry={state.freelancer.country}
-        />
+        {uploaded ? (
+          <UploadedAgreementDoc
+            client={client}
+            asClient={false}
+            freelancerCountry={state.freelancer.country}
+          />
+        ) : (
+          <AgreementDoc
+            client={client}
+            asClient={false}
+            freelancerCountry={state.freelancer.country}
+          />
+        )}
       </div>
     </>
   );

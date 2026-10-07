@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { AgreementDetail, Agreements } from './pages/Agreements';
+import { AgreementUpload } from './pages/AgreementUpload';
 import { ClientDetail } from './pages/ClientDetail';
 import { ClientForm } from './pages/ClientForm';
 import { Clients } from './pages/Clients';
@@ -43,6 +44,7 @@ export function App() {
         <Route path="/clients/:id/edit" element={<ClientForm />} />
         <Route path="/agreements" element={<Agreements />} />
         <Route path="/agreement/:id" element={<AgreementDetail />} />
+        <Route path="/agreement/:id/upload" element={<AgreementUpload />} />
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/tasks/new" element={<TaskForm />} />
         <Route path="/invoices" element={<Invoices />} />

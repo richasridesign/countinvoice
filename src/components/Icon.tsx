@@ -86,6 +86,20 @@ const PATHS: Record<string, React.ReactNode> = {
       <path d="M19.2 4.8l-8 8" strokeWidth="1.8" />
     </>
   ),
+  upload: (
+    <>
+      <path d="M12 15.5V4.5" />
+      <path d="M7.5 9 12 4.5 16.5 9" />
+      <path d="M4.5 15.5v3a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-3" />
+    </>
+  ),
+  download: (
+    <>
+      <path d="M12 4.5v11" />
+      <path d="M7.5 11 12 15.5 16.5 11" />
+      <path d="M4.5 15.5v3a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-3" />
+    </>
+  ),
   gear: (
     <>
       <circle cx="12" cy="12" r="3.2" />

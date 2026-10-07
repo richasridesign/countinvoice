@@ -10,7 +10,8 @@ import {
 } from 'react';
 import { seedEmpty, seedSample } from './data';
 import { DB_KEY, TODAY, WORKING_DATE } from './types';
-import type { AppState, Client, Invoice, Task } from './types';
+import type { AgreementFile, AppState, Client, ClientProposal, Invoice, Task } from './types';
+import { clearFiles, deleteFile } from './files';
 
 /* ---------------- Persistence ---------------- */
 
@@ -36,14 +37,64 @@ export type Action =
   | { type: 'loadSample' }
   | { type: 'clear' }
   | { type: 'setCountry'; country: string }
-  | { type: 'addClient'; client: Omit<Client, 'id' | 'currency' | 'status'> }
+  | {
+      type: 'addClient';
+      client: Omit<Client, 'id' | 'currency' | 'status'>;
+      agreementFile?: AgreementFile;
+      signed?: SignedOutside;
+    }
   | { type: 'updateClient'; id: string; patch: Partial<Client> }
   | { type: 'deleteClient'; id: string }
   | { type: 'shareAgreement'; id: string }
   | { type: 'signAgreement'; id: string; signatureName: string }
+  | { type: 'attachAgreement'; id: string; file: AgreementFile; signed?: SignedOutside }
+  | { type: 'removeAgreementFile'; id: string }
+  | { type: 'proposeClientAgreement'; id: string; proposal: ClientProposal }
+  | { type: 'acceptClientProposal'; id: string }
+  | { type: 'declineClientProposal'; id: string }
   | { type: 'addTask'; task: Omit<Task, 'id' | 'status'> }
   | { type: 'generateInvoice'; clientId: string }
   | { type: 'setInvoiceStatus'; id: string; status: Invoice['status'] };
+
+/** An uploaded agreement that was signed before it reached CountInvoice. */
+export interface SignedOutside {
+  date: string;
+  signatureName?: string;
+}
+
+/** Status fields for an uploaded agreement, signed already or not. */
+function uploadedAgreement(file: AgreementFile, signed?: SignedOutside): Partial<Client> {
+  return signed
+    ? {
+        agreementFile: file,
+        status: 'active',
+        signedOutside: true,
+        agreementSignedAt: signed.date,
+        signatureName: signed.signatureName || undefined,
+      }
+    : { agreementFile: file, status: 'draft' };
+}
+
+function patchClient(state: AppState, id: string, fn: (c: Client) => Client): AppState {
+  return { ...state, clients: state.clients.map((c) => (c.id === id ? fn(c) : c)) };
+}
+
+/** Stored file ids that an action is about to orphan. */
+function orphanedFiles(state: AppState, action: Action): string[] {
+  const c = 'id' in action ? state.clients.find((x) => x.id === action.id) : undefined;
+  switch (action.type) {
+    case 'deleteClient':
+      return [c?.agreementFile?.id, c?.clientProposal?.id].filter(Boolean) as string[];
+    case 'removeAgreementFile':
+      return c?.agreementFile?.id ? [c.agreementFile.id] : [];
+    case 'declineClientProposal':
+      return c?.clientProposal?.id ? [c.clientProposal.id] : [];
+    case 'attachAgreement':
+      return c?.agreementFile?.id ? [c.agreementFile.id] : [];
+    default:
+      return [];
+  }
+}
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -69,6 +120,7 @@ function reducer(state: AppState, action: Action): AppState {
         id,
         currency: 'EUR',
         status: 'draft',
+        ...(action.agreementFile ? uploadedAgreement(action.agreementFile, action.signed) : {}),
       };
       return { ...state, clients: [...state.clients, client], seq: state.seq + 1 };
     }
@@ -109,6 +161,36 @@ function reducer(state: AppState, action: Action): AppState {
             : c,
         ),
       };
+
+    case 'attachAgreement':
+      return patchClient(state, action.id, (c) => ({
+        ...c,
+        ...uploadedAgreement(action.file, action.signed),
+      }));
+
+    case 'removeAgreementFile':
+      return patchClient(state, action.id, (c) =>
+        c.status === 'draft' ? { ...c, agreementFile: undefined } : c,
+      );
+
+    case 'proposeClientAgreement':
+      return patchClient(state, action.id, (c) => ({ ...c, clientProposal: action.proposal }));
+
+    case 'acceptClientProposal':
+      return patchClient(state, action.id, (c) => {
+        if (!c.clientProposal) return c;
+        const { note: _note, ...file } = c.clientProposal;
+        return {
+          ...c,
+          agreementFile: { ...file, providedBy: 'client' },
+          clientProposal: undefined,
+          status: 'sent',
+          agreementSentAt: TODAY,
+        };
+      });
+
+    case 'declineClientProposal':
+      return patchClient(state, action.id, (c) => ({ ...c, clientProposal: undefined }));
 
     case 'addTask': {
       const task: Task = { ...action.task, id: `t${state.seq}`, status: 'logged' };
@@ -169,7 +251,22 @@ export interface StoreValue {
 export const StoreContext = createContext<StoreValue | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, null, loadState);
+  const [state, rawDispatch] = useReducer(reducer, null, loadState);
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  // Uploaded files live outside app state, so clean them up alongside it.
+  const dispatch = useCallback((action: Action) => {
+    const stale =
+      action.type === 'clear' || action.type === 'loadSample'
+        ? null
+        : orphanedFiles(stateRef.current, action);
+    if (stale === null) clearFiles().catch(() => {});
+    else stale.forEach((id) => deleteFile(id).catch(() => {}));
+    rawDispatch(action);
+  }, []);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const timer = useRef<number | undefined>(undefined);
 
@@ -190,7 +287,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
-  const value = useMemo(() => ({ state, dispatch, toast }), [state, toast]);
+  const value = useMemo(() => ({ state, dispatch, toast }), [state, dispatch, toast]);
 
   return (
     <StoreContext.Provider value={value}>

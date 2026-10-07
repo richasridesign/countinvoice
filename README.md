@@ -38,6 +38,7 @@ reading the system clock.
 | `/dashboard` | Stat tiles, the agent's approval queue, recent activity |
 | `/clients`, `/clients/:id` | Client list, detail, new/edit form |
 | `/agreements`, `/agreement/:id` | Agreement list and document, with share/sign state |
+| `/agreement/:id/upload` | Replace a drafted agreement with an uploaded file |
 | `/sign/:id`, `/sign/:id/preview` | Client-facing signature page, outside the app shell |
 | `/tasks`, `/tasks/new` | Logged hours |
 | `/invoices`, `/invoices/:id` | Invoice list and document |
@@ -57,6 +58,24 @@ Agreement documents link to the official primary legal source per jurisdiction
 (`LAW_LINKS` in `src/lib/types.ts`) and flag agreements that warrant human
 legal review: an unsupported jurisdiction, a lopsided payment split, or an
 unusually high contract value.
+
+### Uploaded agreements
+
+Besides the agent-drafted agreement, a freelancer can upload one that already
+exists (from **Agreements → Upload existing**, or **Upload instead** on a
+draft). They say who provided it and whether it is already signed: a signed
+upload goes straight to Active, otherwise it follows the usual share and sign
+flow. A simulated agent "reads" the file and pre-fills the terms invoices
+depend on, for the freelancer to confirm. No real parsing happens.
+
+On the share link, a client can choose **Want to use your own agreement?** and
+upload theirs. The freelancer then accepts it (sent back for signature) or
+keeps their own.
+
+Files are stored in IndexedDB (`src/lib/files.ts`), since localStorage is too
+small for documents; app state keeps only the metadata. PDFs preview inline,
+Word files download. The sample data's Lumen Studio agreement points at
+`public/sample/lumen-studio-agreement.pdf`.
 
 ## Deploying to Netlify
 
@@ -86,7 +105,7 @@ links like `/sign/c3` resolve instead of 404ing.
 ## Scope
 
 This is a prototype, not a billing system. Sign-in is simulated, no email is
-sent, and no invoice is a real financial or legal document. Sending real
+sent, uploaded files never leave the visitor's browser, and no invoice is a real financial or legal document. Sending real
 invoices would need authentication, a server-side database, sequential and
 immutable invoice numbering, VAT handling, and data-retention and GDPR
 considerations — none of which are present here.

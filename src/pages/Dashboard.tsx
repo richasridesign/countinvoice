@@ -71,7 +71,7 @@ export function Dashboard() {
 
   const recentTasks = state.tasks.slice(-4).reverse();
   const pendingAgreements = state.clients.filter(
-    (c) => c.status === 'draft' || c.status === 'sent',
+    (c) => c.status === 'draft' || c.status === 'sent' || c.clientProposal,
   );
   const pendingInvoices = state.invoices.filter((i) => i.status === 'draft');
   const queueEmpty = pendingAgreements.length === 0 && pendingInvoices.length === 0;
@@ -153,14 +153,25 @@ export function Dashboard() {
                       <Pill status={c.status} />
                     </td>
                     <td style={{ color: 'var(--muted)' }}>
-                      {c.status === 'draft'
-                        ? 'Agent drafted this agreement — not sent yet'
-                        : c.agreementSentAt
-                          ? `Sent ${fmtDate(c.agreementSentAt)} — awaiting signature`
-                          : 'Awaiting signature'}
+                      {c.clientProposal
+                        ? `${c.name} sent their own agreement. Review it.`
+                        : c.status === 'draft' && c.agreementFile
+                          ? 'You uploaded this agreement. Not sent yet.'
+                          : c.status === 'draft'
+                            ? 'Agent drafted this agreement — not sent yet'
+                            : c.agreementSentAt
+                              ? `Sent ${fmtDate(c.agreementSentAt)} — awaiting signature`
+                              : 'Awaiting signature'}
                     </td>
                     <td className="row-actions">
-                      {c.status === 'draft' ? (
+                      {c.clientProposal ? (
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => navigate(`/agreement/${c.id}`)}
+                        >
+                          <Icon name="file" /> Review
+                        </button>
+                      ) : c.status === 'draft' ? (
                         <button
                           className="btn btn-sm btn-primary"
                           onClick={() => navigate(`/agreement/${c.id}`)}

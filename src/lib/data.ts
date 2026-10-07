@@ -27,6 +27,19 @@ const sampleClients: Client[] = [
       { label: 'On delivery', pct: 50 },
     ],
     notes: 'Ongoing brand & product design retainer, ~15 hrs/month.',
+    // An agreement that predates CountInvoice, uploaded rather than drafted.
+    agreementFile: {
+      id: '',
+      url: '/sample/lumen-studio-agreement.pdf',
+      name: 'lumen-studio-agreement.pdf',
+      size: 1740,
+      mime: 'application/pdf',
+      uploadedAt: '2026-09-01',
+      providedBy: 'client',
+    },
+    signedOutside: true,
+    agreementSignedAt: '2026-03-03',
+    signatureName: 'M. Weber',
   },
   {
     id: 'c2',
