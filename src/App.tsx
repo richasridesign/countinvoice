@@ -9,7 +9,7 @@ import { Dashboard } from './pages/Dashboard';
 import { InvoiceDetail, Invoices } from './pages/Invoices';
 import { Settings } from './pages/Settings';
 import { Sign } from './pages/Sign';
-import { TaskForm, Tasks } from './pages/Tasks';
+import { ReviewWeek, TaskForm, Tasks } from './pages/Tasks';
 import { Welcome } from './pages/Welcome';
 import { useStore } from './lib/hooks';
 
@@ -47,6 +47,7 @@ export function App() {
         <Route path="/agreement/:id/upload" element={<AgreementUpload />} />
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/tasks/new" element={<TaskForm />} />
+        <Route path="/tasks/review" element={<ReviewWeek />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/invoices/:id" element={<InvoiceDetail />} />
         <Route path="/settings" element={<Settings />} />

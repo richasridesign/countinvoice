@@ -1,8 +1,91 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
-import { Card, EmptyState, Pill, Topbar } from '../components/ui';
+import { AgentNote, Card, EmptyState, Pill, Topbar } from '../components/ui';
 import { fmtDate, invoiceTotal, money } from '../lib/format';
 import { useSelectors, useStore } from '../lib/hooks';
+import { reminderTimeline, rulesOf } from '../lib/reminders';
+import type { Invoice } from '../lib/types';
+
+/** What the agent sent for this invoice and what comes next. */
+function Reminders({
+  invoice,
+  clientName,
+  clientEmail,
+}: {
+  invoice: Invoice;
+  clientName?: string;
+  clientEmail?: string;
+}) {
+  const { state, dispatch, toast } = useStore();
+  const timeline = reminderTimeline(invoice, rulesOf(state));
+  const open = invoice.status !== 'paid';
+  const who = clientEmail || clientName || 'your client';
+
+  return (
+    <div className="doc-aside reminders no-print" id="reminders">
+      <div className="reminders-head">
+        <div>
+          <h3>Reminders</h3>
+          <span>
+            {open
+              ? invoice.remindersPaused
+                ? 'Paused. Your agent won’t send anything until you resume.'
+                : 'Your agent follows your reminder rules.'
+              : 'Paid. No more reminders.'}{' '}
+            <Link to="/settings#reminders">Edit rules</Link>
+          </span>
+        </div>
+        {open ? (
+          <div className="reminders-actions">
+            <button
+              className="btn btn-sm btn-ghost"
+              onClick={() => {
+                dispatch({ type: 'pauseReminders', id: invoice.id, paused: !invoice.remindersPaused });
+                toast(invoice.remindersPaused ? 'Reminders resumed' : 'Reminders paused');
+              }}
+            >
+              {invoice.remindersPaused ? 'Resume reminders' : 'Pause reminders'}
+            </button>
+            <button
+              className="btn btn-sm"
+              onClick={() => {
+                dispatch({ type: 'sendReminder', id: invoice.id });
+                toast(`Reminder sent to ${who}`);
+              }}
+            >
+              <Icon name="mail" /> Send now
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      <ol className="timeline">
+        {timeline.map((e, n) => (
+          <li key={n} className={`timeline-item timeline-${e.state}`}>
+            <span className="timeline-dot" aria-hidden="true" />
+            <span className="timeline-date num">{fmtDate(e.date)}</span>
+            <span className="timeline-label">
+              {e.state === 'next' ? 'Next: ' : ''}
+              {e.label}
+              {e.state === 'paused' ? ' (paused)' : ''}
+            </span>
+            {e.state === 'needs-ok' && e.step ? (
+              <button
+                className="btn btn-sm btn-primary"
+                onClick={() => {
+                  dispatch({ type: 'approveReminder', id: invoice.id, step: e.step! });
+                  toast(`Firmer reminder sent to ${who}`);
+                }}
+              >
+                Approve and send
+              </button>
+            ) : null}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
 
 export function Invoices() {
   const { state } = useStore();
@@ -113,11 +196,6 @@ export function InvoiceDetail() {
         title={invoice.number}
         actions={
           <>
-            {invoice.status === 'overdue' ? (
-              <button className="btn" onClick={() => toast('Reminder sent to client')}>
-                <Icon name="mail" /> Send reminder
-              </button>
-            ) : null}
             <button className="btn" onClick={() => window.print()}>
               <Icon name="print" /> Print / save PDF
             </button>
@@ -140,16 +218,21 @@ export function InvoiceDetail() {
         </div>
 
         {invoice.status === 'draft' ? (
-          <div className="share-strip no-print">
-            <div>
-              <strong>Drafted by your agent.</strong>
-              <span> Review the line items below, then approve it to send to {client?.name}.</span>
-            </div>
-            <button className="btn btn-primary btn-sm" onClick={approve}>
-              <Icon name="check" /> Approve &amp; send
-            </button>
+          <div className="doc-aside no-print">
+            <AgentNote
+              did={`drafted this invoice from ${invoice.items.reduce((s, it) => s + it.qty, 0)}h of logged work.`}
+              privacy={`Only the invoice is shared with ${client?.name ?? 'your client'}`}
+              needsOk="It's sent only when you click Approve & send"
+              action={
+                <button className="btn btn-primary btn-sm" onClick={approve}>
+                  <Icon name="check" /> Approve &amp; send
+                </button>
+              }
+            />
           </div>
-        ) : null}
+        ) : (
+          <Reminders invoice={invoice} clientName={client?.name} clientEmail={client?.email} />
+        )}
 
         <div className="doc-wrap">
           <div className="doc">

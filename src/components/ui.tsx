@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { PillStatus } from '../lib/types';
+import { Icon } from './Icon';
 
 const PILL_LABELS: Record<string, string> = {
   active: 'Active',
@@ -56,6 +57,35 @@ export function EmptyState({
       <div className="empty-icon">{icon}</div>
       <h3>{title}</h3>
       {children ? <p>{children}</p> : null}
+      {action}
+    </div>
+  );
+}
+
+/**
+ * The agent note: says what the agent did, what stays private, and what still
+ * needs the freelancer's OK. Used wherever the agent acts on their behalf.
+ */
+export function AgentNote({
+  did,
+  privacy,
+  needsOk,
+  action,
+}: {
+  did: ReactNode;
+  privacy: ReactNode;
+  needsOk: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="agent-note">
+      <Icon name="spark" />
+      <div className="agent-note-body">
+        <strong>Your agent {did}</strong>
+        <span>
+          {privacy} · {needsOk}
+        </span>
+      </div>
       {action}
     </div>
   );

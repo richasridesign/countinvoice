@@ -35,14 +35,15 @@ reading the system clock.
 | Route | Screen |
 |---|---|
 | `/welcome` | Simulated sign-in |
-| `/dashboard` | Stat tiles, the agent's approval queue, recent activity |
+| `/dashboard` | Getting-paid strip, stat tiles, the agent's approval queue, recent activity |
 | `/clients`, `/clients/:id` | Client list, detail, new/edit form |
 | `/agreements`, `/agreement/:id` | Agreement list and document, with share/sign state |
 | `/agreement/:id/upload` | Replace a drafted agreement with an uploaded file |
 | `/sign/:id`, `/sign/:id/preview` | Client-facing signature page, outside the app shell |
 | `/tasks`, `/tasks/new` | Logged hours |
-| `/invoices`, `/invoices/:id` | Invoice list and document |
-| `/settings` | The freelancer's own country, which governs every agreement |
+| `/tasks/review` | Review week: approve tasks drafted from the calendar |
+| `/invoices`, `/invoices/:id` | Invoice list and document, with a reminders timeline |
+| `/settings` | Country (governs every agreement), payment reminder rules, calendar |
 
 ## Design notes
 
@@ -76,6 +77,23 @@ Files are stored in IndexedDB (`src/lib/files.ts`), since localStorage is too
 small for documents; app state keeps only the metadata. PDFs preview inline,
 Word files download. The sample data's Lumen Studio agreement points at
 `public/sample/lumen-studio-agreement.pdf`.
+
+### Payment reminders and calendar import
+
+Both came out of competitor research on Timely.
+
+- **Reminders.** Settings holds the rules: 3 days before due, on the due
+  date, 7 days overdue (sent automatically), and 14 days overdue, which the
+  agent drafts but waits for approval on. Each sent invoice shows a timeline
+  of what was sent and what comes next, with pause and send-now controls.
+  The schedule is derived from the due date and the demo "today"
+  (`src/lib/reminders.ts`); no email is sent.
+- **Calendar.** Connecting Google or Outlook is simulated: the agent drafts
+  tasks from this week's sample meetings (`src/lib/calendar.ts`), and the
+  freelancer approves, edits or skips them in **Review week**.
+- **Agent note.** One component (`AgentNote` in `src/components/ui.tsx`)
+  appears wherever the agent acts. It says what the agent did, what stays
+  private, and what still needs approval.
 
 ## Deploying to Netlify
 

@@ -10,8 +10,20 @@ import {
 } from 'react';
 import { seedEmpty, seedSample } from './data';
 import { DB_KEY, TODAY, WORKING_DATE } from './types';
-import type { AgreementFile, AppState, Client, ClientProposal, Invoice, Task } from './types';
+import type {
+  AgreementFile,
+  AppState,
+  CalendarDraft,
+  CalendarProvider,
+  Client,
+  ClientProposal,
+  Invoice,
+  ReminderRules,
+  ReminderStep,
+  Task,
+} from './types';
 import { clearFiles, deleteFile } from './files';
+import { draftsFromCalendar } from './calendar';
 
 /* ---------------- Persistence ---------------- */
 
@@ -54,7 +66,16 @@ export type Action =
   | { type: 'declineClientProposal'; id: string }
   | { type: 'addTask'; task: Omit<Task, 'id' | 'status'> }
   | { type: 'generateInvoice'; clientId: string }
-  | { type: 'setInvoiceStatus'; id: string; status: Invoice['status'] };
+  | { type: 'setInvoiceStatus'; id: string; status: Invoice['status'] }
+  | { type: 'setReminderRules'; rules: ReminderRules; template: string }
+  | { type: 'sendReminder'; id: string }
+  | { type: 'approveReminder'; id: string; step: ReminderStep }
+  | { type: 'pauseReminders'; id: string; paused: boolean }
+  | { type: 'connectCalendar'; provider: CalendarProvider }
+  | { type: 'disconnectCalendar' }
+  | { type: 'updateDraft'; id: string; patch: Partial<CalendarDraft> }
+  | { type: 'skipDraft'; id: string }
+  | { type: 'approveDrafts'; ids: string[] };
 
 /** An uploaded agreement that was signed before it reached CountInvoice. */
 export interface SignedOutside {
@@ -77,6 +98,10 @@ function uploadedAgreement(file: AgreementFile, signed?: SignedOutside): Partial
 
 function patchClient(state: AppState, id: string, fn: (c: Client) => Client): AppState {
   return { ...state, clients: state.clients.map((c) => (c.id === id ? fn(c) : c)) };
+}
+
+function patchInvoice(state: AppState, id: string, fn: (i: Invoice) => Invoice): AppState {
+  return { ...state, invoices: state.invoices.map((i) => (i.id === id ? fn(i) : i)) };
 }
 
 /** Stored file ids that an action is about to orphan. */
@@ -234,6 +259,67 @@ function reducer(state: AppState, action: Action): AppState {
           i.id === action.id ? { ...i, status: action.status } : i,
         ),
       };
+
+    case 'setReminderRules':
+      return { ...state, reminderRules: action.rules, reminderTemplate: action.template };
+
+    case 'sendReminder':
+      return patchInvoice(state, action.id, (i) => ({
+        ...i,
+        reminders: [...(i.reminders ?? []), { date: TODAY, step: 'manual' }],
+      }));
+
+    case 'approveReminder':
+      return patchInvoice(state, action.id, (i) => ({
+        ...i,
+        reminders: [...(i.reminders ?? []), { date: TODAY, step: action.step }],
+      }));
+
+    case 'pauseReminders':
+      return patchInvoice(state, action.id, (i) => ({ ...i, remindersPaused: action.paused }));
+
+    case 'connectCalendar':
+      return {
+        ...state,
+        calendar: { provider: action.provider, connectedAt: TODAY },
+        calendarDrafts: draftsFromCalendar(state),
+      };
+
+    case 'disconnectCalendar':
+      return { ...state, calendar: undefined, calendarDrafts: [] };
+
+    case 'updateDraft':
+      return {
+        ...state,
+        calendarDrafts: (state.calendarDrafts ?? []).map((d) =>
+          d.id === action.id ? { ...d, ...action.patch } : d,
+        ),
+      };
+
+    case 'skipDraft':
+      return {
+        ...state,
+        calendarDrafts: (state.calendarDrafts ?? []).filter((d) => d.id !== action.id),
+      };
+
+    case 'approveDrafts': {
+      const ids = new Set(action.ids);
+      const approved = (state.calendarDrafts ?? []).filter((d) => ids.has(d.id));
+      const tasks: Task[] = approved.map((d, n) => ({
+        id: `t${state.seq + n}`,
+        clientId: d.clientId,
+        title: d.title,
+        date: d.date,
+        hours: d.hours,
+        status: 'logged',
+      }));
+      return {
+        ...state,
+        tasks: [...state.tasks, ...tasks],
+        calendarDrafts: (state.calendarDrafts ?? []).filter((d) => !ids.has(d.id)),
+        seq: state.seq + tasks.length,
+      };
+    }
 
     default:
       return state;

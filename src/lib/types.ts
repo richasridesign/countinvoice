@@ -84,6 +84,30 @@ export interface Invoice {
   dueDate: string;
   status: InvoiceStatus;
   items: InvoiceItem[];
+  /** Reminders sent by hand, or ones that needed (and got) the freelancer's OK. */
+  reminders?: ReminderLog[];
+  remindersPaused?: boolean;
+}
+
+export type ReminderStep = 'before3' | 'due' | 'over7' | 'over14';
+
+export interface ReminderLog {
+  date: string;
+  step: ReminderStep | 'manual';
+}
+
+/** Which automatic reminders the agent sends. `over14` always waits for approval. */
+export type ReminderRules = Record<ReminderStep, boolean>;
+
+export type CalendarProvider = 'Google' | 'Outlook';
+
+/** A task the agent drafted from a calendar event, waiting for review. */
+export interface CalendarDraft {
+  id: string;
+  clientId: string;
+  title: string;
+  date: string;
+  hours: number;
 }
 
 export interface Freelancer {
@@ -97,6 +121,11 @@ export interface AppState {
   tasks: Task[];
   invoices: Invoice[];
   seq: number;
+  /** Optional so state saved before reminders existed still loads. */
+  reminderRules?: ReminderRules;
+  reminderTemplate?: string;
+  calendar?: { provider: CalendarProvider; connectedAt: string };
+  calendarDrafts?: CalendarDraft[];
 }
 
 export const COUNTRIES = [

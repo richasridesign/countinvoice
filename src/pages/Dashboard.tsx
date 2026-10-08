@@ -3,6 +3,7 @@ import { Icon } from '../components/Icon';
 import { Card, EmptyState, Pill, Topbar } from '../components/ui';
 import { fmtDate, invoiceTotal, money } from '../lib/format';
 import { useSelectors, useStore } from '../lib/hooks';
+import { gettingPaid } from '../lib/reminders';
 
 export function Dashboard() {
   const { state } = useStore();
@@ -74,7 +75,9 @@ export function Dashboard() {
     (c) => c.status === 'draft' || c.status === 'sent' || c.clientProposal,
   );
   const pendingInvoices = state.invoices.filter((i) => i.status === 'draft');
-  const queueEmpty = pendingAgreements.length === 0 && pendingInvoices.length === 0;
+  const paid = gettingPaid(state);
+  const queueEmpty =
+    pendingAgreements.length === 0 && pendingInvoices.length === 0 && paid.needsOk.length === 0;
 
   return (
     <>
@@ -93,6 +96,29 @@ export function Dashboard() {
       />
 
       <div className="content">
+        <div className="paid-strip">
+          <Icon name="bell" />
+          <span>
+            <strong>Getting paid</strong>
+            <span>{money(outstanding, 'EUR')} outstanding</span>
+            <span>
+              {overdueCount} overdue
+            </span>
+            <span>
+              {paid.needsOk.length
+                ? `${paid.needsOk.length} reminder${paid.needsOk.length === 1 ? '' : 's'} waiting for your OK`
+                : paid.nextDate
+                  ? `next reminder ${fmtDate(paid.nextDate)}`
+                  : paid.open.length
+                    ? 'no reminders scheduled'
+                    : 'nothing outstanding'}
+            </span>
+          </span>
+          <Link to="/invoices" className="law-link">
+            View invoices
+          </Link>
+        </div>
+
         <div className="grid-tiles">
           <div className="tile">
             <div className="label">Outstanding</div>
@@ -189,6 +215,38 @@ export function Dashboard() {
                     </td>
                   </tr>
                 ))}
+
+                {paid.needsOk.map((i) => {
+                  const c = clientById(i.clientId);
+                  return (
+                    <tr key={`r${i.id}`}>
+                      <td>
+                        <Icon name="bell" />
+                      </td>
+                      <td>
+                        <strong>{i.number}</strong>
+                        <br />
+                        <span style={{ color: 'var(--muted)', fontSize: 12 }}>
+                          Reminder to {c?.name}
+                        </span>
+                      </td>
+                      <td>
+                        <Pill status="overdue" />
+                      </td>
+                      <td style={{ color: 'var(--muted)' }}>
+                        14 days overdue. Your agent drafted a firmer reminder.
+                      </td>
+                      <td className="row-actions">
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => navigate(`/invoices/${i.id}`)}
+                        >
+                          <Icon name="mail" /> Review
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
 
                 {pendingInvoices.map((i) => {
                   const c = clientById(i.clientId);

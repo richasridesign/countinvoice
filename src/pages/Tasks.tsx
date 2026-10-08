@@ -1,9 +1,223 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '../components/Icon';
-import { Card, EmptyState, Pill, Topbar } from '../components/ui';
+import { AgentNote, Card, EmptyState, Pill, Topbar } from '../components/ui';
 import { fmtDate } from '../lib/format';
 import { useSelectors, useStore } from '../lib/hooks';
-import { WORKING_DATE } from '../lib/types';
+import { WORKING_DATE, type CalendarDraft } from '../lib/types';
+
+function weekLabel(drafts: CalendarDraft[]): string {
+  const dates = drafts.map((d) => d.date).sort();
+  if (dates.length === 0) return '';
+  const short = (d: string) =>
+    new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const first = short(dates[0]);
+  const last = short(dates[dates.length - 1]);
+  return first === last ? first : `${first} to ${last}`;
+}
+
+/** Shown on the task list while calendar drafts are waiting. */
+function DraftsBanner() {
+  const { state } = useStore();
+  const drafts = state.calendarDrafts ?? [];
+  if (!drafts.length) return null;
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <AgentNote
+        did={`drafted ${drafts.length} task${drafts.length === 1 ? '' : 's'} from your calendar this week.`}
+        privacy="Event details stay private"
+        needsOk="Nothing is invoiced until you approve"
+        action={
+          <Link className="btn btn-sm btn-primary" to="/tasks/review">
+            Review week
+          </Link>
+        }
+      />
+    </div>
+  );
+}
+
+export function ReviewWeek() {
+  const { state, dispatch, toast } = useStore();
+  const { clientById } = useSelectors();
+  const navigate = useNavigate();
+  const drafts = state.calendarDrafts ?? [];
+  const [editing, setEditing] = useState<string | null>(null);
+  const [oneByOne, setOneByOne] = useState(false);
+
+  function approve(ids: string[]) {
+    dispatch({ type: 'approveDrafts', ids });
+    toast(`${ids.length} task${ids.length === 1 ? '' : 's'} added. Ready for invoicing.`);
+    if (ids.length === drafts.length) navigate('/tasks');
+  }
+
+  function skip(id: string) {
+    dispatch({ type: 'skipDraft', id });
+    toast('Skipped. It won’t become a task.');
+  }
+
+  if (!drafts.length) {
+    return (
+      <>
+        <Topbar eyebrow="Tasks" title="Review week" />
+        <div className="content">
+          <div className="breadcrumb">
+            <Link to="/tasks">← All tasks</Link>
+          </div>
+          <EmptyState
+            icon={<Icon name="calendar" />}
+            title="Nothing to review"
+            action={
+              state.calendar ? (
+                <Link className="btn btn-primary" to="/tasks">
+                  Back to tasks
+                </Link>
+              ) : (
+                <Link className="btn btn-primary" to="/settings#calendar">
+                  <Icon name="calendar" /> Connect your calendar
+                </Link>
+              )
+            }
+          >
+            {state.calendar
+              ? 'Every draft from your calendar has been approved or skipped.'
+              : 'Connect your calendar and your agent will draft tasks from client meetings.'}
+          </EmptyState>
+        </div>
+      </>
+    );
+  }
+
+  const shown = oneByOne ? drafts.slice(0, 1) : drafts;
+
+  return (
+    <>
+      <Topbar
+        eyebrow={`Tasks · ${weekLabel(drafts)}`}
+        title="Review week"
+        actions={
+          <>
+            <button className="btn btn-ghost" onClick={() => setOneByOne(!oneByOne)}>
+              {oneByOne ? 'Show the whole week' : 'Review one by one'}
+            </button>
+            <button className="btn btn-primary" onClick={() => approve(drafts.map((d) => d.id))}>
+              <Icon name="check" /> Approve week
+            </button>
+          </>
+        }
+      />
+      <div className="content">
+        <div className="breadcrumb">
+          <Link to="/tasks">← All tasks</Link>
+        </div>
+
+        <div style={{ margin: '10px 0 16px 0' }}>
+          <AgentNote
+            did={`drafted ${drafts.length} task${drafts.length === 1 ? '' : 's'} from your ${state.calendar?.provider ?? ''} calendar this week.`}
+            privacy="Event details stay private"
+            needsOk="Nothing is invoiced until you approve"
+          />
+        </div>
+
+        {oneByOne ? (
+          <p className="settings-intro">
+            {drafts.length} left to review. Approve or skip each one.
+          </p>
+        ) : null}
+
+        <Card>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Task</th>
+                <th>Client</th>
+                <th>Hours</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((d) =>
+                editing === d.id ? (
+                  <tr key={d.id}>
+                    <td className="num">{fmtDate(d.date)}</td>
+                    <td>
+                      <input
+                        type="text"
+                        aria-label="Task"
+                        value={d.title}
+                        onChange={(e) =>
+                          dispatch({ type: 'updateDraft', id: d.id, patch: { title: e.target.value } })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <select
+                        aria-label="Client"
+                        value={d.clientId}
+                        onChange={(e) =>
+                          dispatch({ type: 'updateDraft', id: d.id, patch: { clientId: e.target.value } })
+                        }
+                      >
+                        {state.clients.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td style={{ minWidth: 96 }}>
+                      <input
+                        className="mono"
+                        type="number"
+                        aria-label="Hours"
+                        step="0.5"
+                        min="0"
+                        value={d.hours}
+                        onChange={(e) =>
+                          dispatch({
+                            type: 'updateDraft',
+                            id: d.id,
+                            patch: { hours: Number(e.target.value) || 0 },
+                          })
+                        }
+                      />
+                    </td>
+                    <td className="row-actions">
+                      <button className="btn btn-sm btn-primary" onClick={() => setEditing(null)}>
+                        Done
+                      </button>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={d.id}>
+                    <td className="num">{fmtDate(d.date)}</td>
+                    <td>{d.title}</td>
+                    <td>{clientById(d.clientId)?.name ?? '—'}</td>
+                    <td className="num">{d.hours}h</td>
+                    <td className="row-actions">
+                      {oneByOne ? (
+                        <button className="btn btn-sm btn-primary" onClick={() => approve([d.id])}>
+                          <Icon name="check" /> Approve
+                        </button>
+                      ) : null}{' '}
+                      <button className="btn btn-sm" onClick={() => setEditing(d.id)}>
+                        Edit
+                      </button>{' '}
+                      <button className="btn btn-sm btn-ghost" onClick={() => skip(d.id)}>
+                        Skip
+                      </button>
+                    </td>
+                  </tr>
+                ),
+              )}
+            </tbody>
+          </table>
+        </Card>
+      </div>
+    </>
+  );
+}
 
 export function Tasks() {
   const { state } = useStore();
@@ -37,6 +251,7 @@ export function Tasks() {
       <>
         <Topbar eyebrow="Time & tasks" title="Tasks" />
         <div className="content">
+          <DraftsBanner />
           <EmptyState
             icon={<Icon name="check" />}
             title="No tasks logged yet"
@@ -65,6 +280,7 @@ export function Tasks() {
         }
       />
       <div className="content">
+        <DraftsBanner />
         <Card>
           <table>
             <thead>
