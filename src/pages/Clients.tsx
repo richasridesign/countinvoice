@@ -26,7 +26,7 @@ export function RowActions({
         <div className="confirm-delete">
           <span>Delete {client.name}?</span>
           <button
-            className="btn btn-sm btn-primary"
+            className="btn btn-sm"
             onClick={(e) => {
               e.stopPropagation();
               onDelete(client.id);
@@ -92,15 +92,14 @@ export function Clients() {
         <Topbar eyebrow="Workspace" title="Clients" />
         <div className="content">
           <EmptyState
-            icon={<Icon name="users" />}
             title="No clients yet"
             action={
-              <button className="btn btn-primary" onClick={() => navigate('/clients/new')}>
+              <button className="btn" onClick={() => navigate('/clients/new')}>
                 <Icon name="plus" /> Add your first client
               </button>
             }
           >
-            Add a client to draft their agreement — country, engagement type and payment split all
+            Add a client to draft their agreement. Country, engagement type and payment split all
             live here.
           </EmptyState>
         </div>
@@ -114,7 +113,7 @@ export function Clients() {
         eyebrow="Workspace"
         title="Clients"
         actions={
-          <button className="btn btn-primary" onClick={() => navigate('/clients/new')}>
+          <button className="btn" onClick={() => navigate('/clients/new')}>
             <Icon name="plus" /> Add client
           </button>
         }

@@ -1,24 +1,30 @@
 import type { ReactNode } from 'react';
 import type { PillStatus } from '../lib/types';
-import { Icon } from './Icon';
 
+/** Status in plain words: who it is waiting on, not just what it is. */
 const PILL_LABELS: Record<string, string> = {
-  active: 'Active',
-  draft: 'Draft',
+  active: 'Signed',
+  draft: 'Waiting on you',
   overdue: 'Overdue',
   paid: 'Paid',
-  sent: 'Sent',
-  logged: 'Logged',
+  sent: 'Waiting on client',
+  logged: 'Not invoiced yet',
   invoiced: 'Invoiced',
 };
 
+/** The same statuses, worded for the client on their share link. */
+const CLIENT_LABELS: Record<string, string> = {
+  sent: 'Waiting for your signature',
+};
+
 /**
- * Four visual tiers, keyed by status:
- * outline = not started, filled = in progress, bold = resolved,
- * inverted = needs attention.
+ * Four tiers that read without colour: bold with a filled mark when it waits
+ * on you or is overdue, regular with a hollow mark when it waits on someone
+ * else, muted with a tick when it's done.
  */
-export function Pill({ status }: { status: PillStatus }) {
-  return <span className={`pill pill-${status}`}>{PILL_LABELS[status] ?? status}</span>;
+export function Pill({ status, forClient = false }: { status: PillStatus; forClient?: boolean }) {
+  const label = (forClient && CLIENT_LABELS[status]) || PILL_LABELS[status] || status;
+  return <span className={`pill pill-${status}`}>{label}</span>;
 }
 
 export function Topbar({
@@ -41,23 +47,59 @@ export function Topbar({
   );
 }
 
+/** Empty states are drawn with the paperwork itself: a stack of sheets and a stamp. */
+export function PaperStack({ small = false }: { small?: boolean }) {
+  return (
+    <svg
+      className={small ? 'paper-stack paper-stack-sm' : 'paper-stack'}
+      viewBox="0 0 120 100"
+      aria-hidden="true"
+    >
+      <rect x="22" y="14" width="52" height="68" rx="3" transform="rotate(-8 48 48)" />
+      <rect x="32" y="10" width="52" height="68" rx="3" transform="rotate(3 58 44)" />
+      <rect className="paper-top" x="38" y="12" width="52" height="68" rx="3" />
+      <path d="M46 28h36M46 38h36M46 48h36M46 58h20" />
+      <circle className="paper-stamp" cx="88" cy="74" r="15" />
+      <path className="paper-stamp-tick" d="M81 74l5 5 9-10" />
+    </svg>
+  );
+}
+
 export function EmptyState({
-  icon,
   title,
   children,
   action,
 }: {
-  icon: ReactNode;
   title: string;
   children?: ReactNode;
   action?: ReactNode;
 }) {
   return (
     <div className="empty-state">
-      <div className="empty-icon">{icon}</div>
+      <PaperStack />
       <h3>{title}</h3>
       {children ? <p>{children}</p> : null}
       {action}
+    </div>
+  );
+}
+
+/** The agent's mark: a dashed monogram, so its work never looks like yours. */
+export function AgentMark() {
+  return (
+    <span className="agent-mark" aria-hidden="true">
+      ci
+    </span>
+  );
+}
+
+/** Ink stamp shown only once the freelancer (or client) has approved something. */
+export function ApprovalStamp({ label, by, date }: { label: string; by: string; date?: string }) {
+  return (
+    <div className="stamp" role="img" aria-label={`${label} by ${by}${date ? `, ${date}` : ''}`}>
+      <strong>{label}</strong>
+      <span>{by}</span>
+      {date ? <span>{date}</span> : null}
     </div>
   );
 }
@@ -79,7 +121,7 @@ export function AgentNote({
 }) {
   return (
     <div className="agent-note">
-      <Icon name="spark" />
+      <AgentMark />
       <div className="agent-note-body">
         <strong>Your agent {did}</strong>
         <span>

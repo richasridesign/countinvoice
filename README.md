@@ -51,9 +51,32 @@ All styling is plain CSS in `src/index.css`, carried over from the original
 prototype. Colors are custom properties on `:root` with a dark-mode override,
 so both themes come from one set of tokens.
 
-Status pills use four visual tiers rather than color alone — outline for not
-started, filled for in progress, bold for resolved, inverted for needs
-attention — which keeps them legible in both themes and without color vision.
+Status is written in plain words that say who it is waiting on ("Waiting on
+you", "Waiting on client", "Overdue", "Paid"), with four tiers that read
+without colour: bold with a filled mark when it needs you, regular with a
+hollow mark when it waits on someone else, muted with a tick when it's done.
+
+### Visual language
+
+Came out of competitor research (see the FigJam board). The category is loud,
+blue and violet, and shows AI as magic; CountInvoice stays monochrome and
+makes the review step visible instead.
+
+- **Agent vs you.** Anything the agent prepared carries a dashed `ci` mark
+  (`AgentMark`). Drafts are dashed and muted with a "Draft by agent" tag, and
+  turn solid once approved. Your approval leaves an ink stamp
+  (`ApprovalStamp`); signed agreements and paid invoices get one too.
+- **One filled button per screen**, kept for the step that reaches a client
+  and can't be undone: Approve & send, Share with client, sign. Everything
+  else is outline or text.
+- **Numbers as the hero.** Invoices end in a large IBM Plex Mono total with
+  the sum behind it ("20.5h × €60").
+- **Provenance.** Each invoice says who prepared and approved it, with a log
+  of what the agent did.
+- **Paperwork as illustration.** Empty states use a stack of paper with a
+  stamp (`PaperStack`), not icons, photos or sparkles.
+- **Voice.** Say what happened and who it's waiting on, with real names,
+  dates and amounts. No exclamation marks.
 
 Agreement documents link to the official primary legal source per jurisdiction
 (`LAW_LINKS` in `src/lib/types.ts`) and flag agreements that warrant human

@@ -28,7 +28,7 @@ function DraftsBanner() {
         privacy="Event details stay private"
         needsOk="Nothing is invoiced until you approve"
         action={
-          <Link className="btn btn-sm btn-primary" to="/tasks/review">
+          <Link className="btn btn-sm" to="/tasks/review">
             Review week
           </Link>
         }
@@ -65,15 +65,14 @@ export function ReviewWeek() {
             <Link to="/tasks">← All tasks</Link>
           </div>
           <EmptyState
-            icon={<Icon name="calendar" />}
             title="Nothing to review"
             action={
               state.calendar ? (
-                <Link className="btn btn-primary" to="/tasks">
+                <Link className="btn" to="/tasks">
                   Back to tasks
                 </Link>
               ) : (
-                <Link className="btn btn-primary" to="/settings#calendar">
+                <Link className="btn" to="/settings#calendar">
                   <Icon name="calendar" /> Connect your calendar
                 </Link>
               )
@@ -100,7 +99,7 @@ export function ReviewWeek() {
             <button className="btn btn-ghost" onClick={() => setOneByOne(!oneByOne)}>
               {oneByOne ? 'Show the whole week' : 'Review one by one'}
             </button>
-            <button className="btn btn-primary" onClick={() => approve(drafts.map((d) => d.id))}>
+            <button className="btn" onClick={() => approve(drafts.map((d) => d.id))}>
               <Icon name="check" /> Approve week
             </button>
           </>
@@ -184,7 +183,7 @@ export function ReviewWeek() {
                       />
                     </td>
                     <td className="row-actions">
-                      <button className="btn btn-sm btn-primary" onClick={() => setEditing(null)}>
+                      <button className="btn btn-sm" onClick={() => setEditing(null)}>
                         Done
                       </button>
                     </td>
@@ -197,7 +196,7 @@ export function ReviewWeek() {
                     <td className="num">{d.hours}h</td>
                     <td className="row-actions">
                       {oneByOne ? (
-                        <button className="btn btn-sm btn-primary" onClick={() => approve([d.id])}>
+                        <button className="btn btn-sm" onClick={() => approve([d.id])}>
                           <Icon name="check" /> Approve
                         </button>
                       ) : null}{' '}
@@ -230,10 +229,9 @@ export function Tasks() {
         <Topbar eyebrow="Time & tasks" title="Tasks" />
         <div className="content">
           <EmptyState
-            icon={<Icon name="check" />}
             title="Add a client first"
             action={
-              <button className="btn btn-primary" onClick={() => navigate('/clients/new')}>
+              <button className="btn" onClick={() => navigate('/clients/new')}>
                 <Icon name="plus" /> Add a client
               </button>
             }
@@ -253,10 +251,9 @@ export function Tasks() {
         <div className="content">
           <DraftsBanner />
           <EmptyState
-            icon={<Icon name="check" />}
             title="No tasks logged yet"
             action={
-              <button className="btn btn-primary" onClick={() => navigate('/tasks/new')}>
+              <button className="btn" onClick={() => navigate('/tasks/new')}>
                 <Icon name="plus" /> Log your first task
               </button>
             }
@@ -274,7 +271,7 @@ export function Tasks() {
         eyebrow="Time & tasks"
         title="Tasks"
         actions={
-          <button className="btn btn-primary" onClick={() => navigate('/tasks/new')}>
+          <button className="btn" onClick={() => navigate('/tasks/new')}>
             <Icon name="plus" /> Log task
           </button>
         }
@@ -336,10 +333,9 @@ export function TaskForm() {
         <Topbar eyebrow="Tasks" title="Log a task" />
         <div className="content">
           <EmptyState
-            icon={<Icon name="users" />}
             title="Add a client first"
             action={
-              <button className="btn btn-primary" onClick={() => navigate('/clients/new')}>
+              <button className="btn" onClick={() => navigate('/clients/new')}>
                 <Icon name="plus" /> Add a client
               </button>
             }
@@ -412,7 +408,7 @@ export function TaskForm() {
           </div>
 
           <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn">
               <Icon name="check" /> Save task
             </button>
             <Link className="btn btn-ghost" to="/tasks">

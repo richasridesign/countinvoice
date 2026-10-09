@@ -59,7 +59,7 @@ export function reminderTimeline(invoice: Invoice, rules: ReminderRules): Timeli
   if (invoice.status === 'draft') return [];
   const logs = invoice.reminders ?? [];
   const entries: TimelineEntry[] = [
-    { date: invoice.issueDate, label: 'Invoice sent', state: 'done' },
+    { date: invoice.approvedAt ?? invoice.issueDate, label: 'Invoice sent', state: 'done' },
   ];
 
   for (const step of REMINDER_STEPS) {

@@ -39,12 +39,12 @@ export function Settings() {
                 ))}
               </select>
               <span className="hint">
-                This is what governs every agreement your agent drafts — not the client's country.
+                This governs every agreement your agent drafts, not the client's country.
                 It's the law you can actually act on if a client doesn't pay.
               </span>
             </div>
             <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
+              <button type="submit" className="btn">
                 <Icon name="check" /> Save
               </button>
             </div>
@@ -119,7 +119,7 @@ function ReminderSettings() {
       ) : null}
 
       <div className="form-actions">
-        <button className="btn btn-primary" onClick={save}>
+        <button className="btn" onClick={save}>
           <Icon name="check" /> Save rules
         </button>
         {editing ? null : (
@@ -167,7 +167,7 @@ function CalendarSettings() {
             </span>
           </div>
           {drafts.length ? (
-            <Link className="btn btn-sm btn-primary" to="/tasks/review">
+            <Link className="btn btn-sm" to="/tasks/review">
               Review week
             </Link>
           ) : null}

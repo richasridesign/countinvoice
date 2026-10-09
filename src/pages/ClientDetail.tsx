@@ -32,7 +32,7 @@ export function ClientDetail() {
     toast(
       `Your agent drafted INV-${state.seq} from ${unbilled.length} task${
         unbilled.length === 1 ? '' : 's'
-      } — review before sending`,
+      }. Check it before sending.`,
     );
     navigate(`/invoices/${nextId}`);
   }

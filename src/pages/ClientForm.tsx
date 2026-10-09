@@ -139,7 +139,7 @@ export function ClientForm() {
     }
 
     dispatch({ type: 'addClient', client: fields });
-    toast('Client added — review the draft agreement');
+    toast('Client added. Check the draft agreement.');
     navigate(`/agreement/${newId}`);
   }
 
@@ -242,7 +242,7 @@ export function ClientForm() {
                 ))}
               </select>
               <span className="hint">
-                Where the client is based — used for their invoice address.
+                Where the client is based. Used for their invoice address.
               </span>
             </div>
             <div className="field">
@@ -325,7 +325,7 @@ export function ClientForm() {
           <div className="form-actions">
             <button
               type="submit"
-              className="btn btn-primary"
+              className="btn"
               disabled={saving || (uploading && (!file || reading === 'reading'))}
             >
               <Icon name={editing || uploading ? 'check' : 'file'} />{' '}
