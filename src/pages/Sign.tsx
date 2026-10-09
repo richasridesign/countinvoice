@@ -226,7 +226,7 @@ export function Sign({ preview = false }: { preview?: boolean }) {
             <strong>Previewing as {client.name} would see it.</strong>
             <span>
               {' '}
-              Signing is disabled here — only {client.name} can sign, from their own link.
+              Signing is off here. Only {client.name} can sign, from their own link.
             </span>
           </div>
           <button className="btn btn-sm" onClick={() => navigate(`/agreement/${client.id}`)}>

@@ -100,7 +100,6 @@ const PATHS: Record<string, React.ReactNode> = {
       <path d="M4.5 15.5v3a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-3" />
     </>
   ),
-  spark: <path d="M12 3.5l1.9 5.6 5.6 1.9-5.6 1.9-1.9 5.6-1.9-5.6-5.6-1.9 5.6-1.9z" />,
   calendar: (
     <>
       <rect x="4" y="5.5" width="16" height="14.5" rx="2" />

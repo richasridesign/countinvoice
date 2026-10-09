@@ -23,7 +23,7 @@ export function Welcome() {
           </h1>
           <p className="lede">
             Your CountInvoice agent drafts each client's agreement, tracks the hours, and prepares
-            the invoices — nothing goes out to a client until you approve it.
+            the invoices. Nothing goes out to a client until you approve it.
           </p>
 
           <div className="field">
@@ -45,7 +45,7 @@ export function Welcome() {
             <Icon name="google" /> Continue with Google
           </button>
 
-          <p className="fine">Prototype build — sign-in is simulated, no email is sent.</p>
+          <p className="fine">Prototype build. Sign-in is simulated and no email is sent.</p>
         </div>
       </div>
       <div className="proto-badge">Prototype · v0.1</div>

@@ -49,11 +49,10 @@ export function Agreements() {
         <Topbar title="Agreements" />
         <div className="content">
           <EmptyState
-            icon={<Icon name="sign" />}
             title="No agreements yet"
             action={
               <div className="empty-actions">
-                <button className="btn btn-primary" onClick={() => navigate('/clients/new')}>
+                <button className="btn" onClick={() => navigate('/clients/new')}>
                   <Icon name="sign" /> Draft your first agreement
                 </button>
                 <button
@@ -85,7 +84,7 @@ export function Agreements() {
             >
               <Icon name="upload" /> Upload existing
             </button>
-            <button className="btn btn-primary" onClick={() => navigate('/clients/new')}>
+            <button className="btn" onClick={() => navigate('/clients/new')}>
               <Icon name="sign" /> Draft new agreement
             </button>
           </>
@@ -281,7 +280,7 @@ export function AgreementDetail() {
               </strong>
               <span>
                 {' '}
-                Emailed to {client.email || client.name} — waiting on them to review and sign.
+                Emailed to {client.email || client.name}. Waiting on them to review and sign.
               </span>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>

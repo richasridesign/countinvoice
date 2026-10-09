@@ -256,7 +256,14 @@ function reducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         invoices: state.invoices.map((i) =>
-          i.id === action.id ? { ...i, status: action.status } : i,
+          i.id !== action.id
+            ? i
+            : {
+                ...i,
+                status: action.status,
+                ...(action.status === 'sent' ? { approvedAt: TODAY } : {}),
+                ...(action.status === 'paid' ? { paidAt: TODAY } : {}),
+              },
         ),
       };
 

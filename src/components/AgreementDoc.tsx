@@ -1,6 +1,6 @@
 import { Icon } from './Icon';
-import { Pill } from './ui';
-import { legalReviewFlags, milestoneValue, money } from '../lib/format';
+import { ApprovalStamp, Pill } from './ui';
+import { fmtDate, legalReviewFlags, milestoneValue, money } from '../lib/format';
 import { LAW_LINKS, type Client } from '../lib/types';
 
 function DocNote({
@@ -22,7 +22,7 @@ function DocNote({
       <div className="doc-note doc-note-flag">
         <Icon name="sign" />
         <span>
-          <strong>Worth a second look:</strong> {flags.join('; ')} — have a lawyer review before
+          <strong>Worth a second look:</strong> {flags.join('; ')}. Have a lawyer review it before
           sending.
         </span>
       </div>
@@ -52,10 +52,13 @@ export function AgreementDoc({
 }) {
   const law = LAW_LINKS[freelancerCountry];
   const subtitle = asClient ? `Prepared for ${client.name}` : `Between you and ${client.name}`;
+  const draft = !asClient && client.status === 'draft';
+  const signed = client.status === 'active' || client.status === 'overdue';
 
   return (
     <div className="doc-wrap">
-      <div className="doc">
+      <div className={draft ? 'doc doc-draft' : 'doc'}>
+        {draft ? <div className="draft-tag no-print">Draft by agent</div> : null}
         <div className="doc-head">
           <div>
             <h2>Service Agreement</h2>
@@ -64,7 +67,7 @@ export function AgreementDoc({
           <div className="meta">
             Status
             <span className="num">
-              <Pill status={client.status} />
+              <Pill status={client.status} forClient={asClient} />
             </span>
           </div>
         </div>
@@ -119,6 +122,16 @@ export function AgreementDoc({
             ) : null}
           </p>
         </div>
+
+        {signed ? (
+          <div className="doc-stamp-row">
+            <ApprovalStamp
+              label="Signed"
+              by={client.signatureName || client.name}
+              date={client.agreementSignedAt ? fmtDate(client.agreementSignedAt) : undefined}
+            />
+          </div>
+        ) : null}
 
         <DocNote client={client} asClient={asClient} freelancerCountry={freelancerCountry} />
       </div>

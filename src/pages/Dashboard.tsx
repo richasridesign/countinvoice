@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '../components/Icon';
-import { Card, EmptyState, Pill, Topbar } from '../components/ui';
+import { Card, EmptyState, PaperStack, Pill, Topbar } from '../components/ui';
 import { fmtDate, invoiceTotal, money } from '../lib/format';
 import { useSelectors, useStore } from '../lib/hooks';
 import { gettingPaid } from '../lib/reminders';
@@ -19,13 +19,13 @@ export function Dashboard() {
             <div>
               <h2>Meet your agent.</h2>
               <p>
-                Add a client and your agent takes it from there — drafting their agreement, then
-                preparing invoices as you log work. Everything waits for your approval before it
+                Add a client and your agent takes it from there. It drafts their agreement, then
+                prepares invoices as you log work. Everything waits for your approval before it
                 reaches a client.
               </p>
             </div>
             <button
-              className="btn btn-primary"
+              className="btn"
               style={{ flex: 'none' }}
               onClick={() => navigate('/clients/new')}
             >
@@ -88,7 +88,7 @@ export function Dashboard() {
             <button className="btn" onClick={() => navigate('/clients/new')}>
               <Icon name="sign" /> Draft agreement
             </button>
-            <button className="btn btn-primary" onClick={() => navigate('/tasks/new')}>
+            <button className="btn" onClick={() => navigate('/tasks/new')}>
               <Icon name="plus" /> Log task
             </button>
           </>
@@ -141,14 +141,12 @@ export function Dashboard() {
 
         <h3 style={{ fontSize: 15, marginBottom: 2 }}>Your agent's queue</h3>
         <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: '0 0 10px 0' }}>
-          Drafted automatically — nothing reaches a client until you approve it.
+          Drafted for you. Nothing reaches a client until you approve it.
         </p>
 
         {queueEmpty ? (
           <div className="empty-state" style={{ padding: '32px 24px', marginBottom: 26 }}>
-            <div className="empty-icon">
-              <Icon name="sign" />
-            </div>
+            <PaperStack small />
             <h3 style={{ fontSize: 15 }}>Your agent's queue is empty</h3>
             <p style={{ marginBottom: 0 }}>Nothing drafted is waiting on your review right now.</p>
           </div>
@@ -184,22 +182,22 @@ export function Dashboard() {
                         : c.status === 'draft' && c.agreementFile
                           ? 'You uploaded this agreement. Not sent yet.'
                           : c.status === 'draft'
-                            ? 'Agent drafted this agreement — not sent yet'
+                            ? 'Your agent drafted this agreement. Not sent yet.'
                             : c.agreementSentAt
-                              ? `Sent ${fmtDate(c.agreementSentAt)} — awaiting signature`
-                              : 'Awaiting signature'}
+                              ? `Sent ${fmtDate(c.agreementSentAt)}. Waiting on their signature.`
+                              : 'Waiting on their signature.'}
                     </td>
                     <td className="row-actions">
                       {c.clientProposal ? (
                         <button
-                          className="btn btn-sm btn-primary"
+                          className="btn btn-sm"
                           onClick={() => navigate(`/agreement/${c.id}`)}
                         >
                           <Icon name="file" /> Review
                         </button>
                       ) : c.status === 'draft' ? (
                         <button
-                          className="btn btn-sm btn-primary"
+                          className="btn btn-sm"
                           onClick={() => navigate(`/agreement/${c.id}`)}
                         >
                           <Icon name="mail" /> Review &amp; share
@@ -238,7 +236,7 @@ export function Dashboard() {
                       </td>
                       <td className="row-actions">
                         <button
-                          className="btn btn-sm btn-primary"
+                          className="btn btn-sm"
                           onClick={() => navigate(`/invoices/${i.id}`)}
                         >
                           <Icon name="mail" /> Review
@@ -267,11 +265,11 @@ export function Dashboard() {
                         <Pill status="draft" />
                       </td>
                       <td style={{ color: 'var(--muted)' }}>
-                        Agent drafted from logged hours — {money(invoiceTotal(i), c.currency)}
+                        Your agent drafted it from logged hours: {money(invoiceTotal(i), c.currency)}
                       </td>
                       <td className="row-actions">
                         <button
-                          className="btn btn-sm btn-primary"
+                          className="btn btn-sm"
                           onClick={() => navigate(`/invoices/${i.id}`)}
                         >
                           <Icon name="check" /> Review &amp; approve
@@ -315,10 +313,9 @@ export function Dashboard() {
           </Card>
         ) : (
           <EmptyState
-            icon={<Icon name="check" />}
             title="No tasks logged yet"
             action={
-              <Link className="btn btn-primary" to="/tasks/new">
+              <Link className="btn" to="/tasks/new">
                 <Icon name="plus" /> Log task
               </Link>
             }

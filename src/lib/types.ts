@@ -84,6 +84,9 @@ export interface Invoice {
   dueDate: string;
   status: InvoiceStatus;
   items: InvoiceItem[];
+  /** When the freelancer approved and sent it. Older data falls back to issueDate. */
+  approvedAt?: string;
+  paidAt?: string;
   /** Reminders sent by hand, or ones that needed (and got) the freelancer's OK. */
   reminders?: ReminderLog[];
   remindersPaused?: boolean;

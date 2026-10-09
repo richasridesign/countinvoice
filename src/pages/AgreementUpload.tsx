@@ -74,7 +74,7 @@ export function AgreementUpload() {
           </div>
 
           <div className="form-actions">
-            <button type="submit" className="btn btn-primary" disabled={!file || saving}>
+            <button type="submit" className="btn" disabled={!file || saving}>
               <Icon name="check" /> Save agreement
             </button>
             <Link className="btn btn-ghost" to={`/agreement/${client.id}`}>

@@ -1,6 +1,14 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
-import { AgentNote, Card, EmptyState, Pill, Topbar } from '../components/ui';
+import {
+  AgentMark,
+  AgentNote,
+  ApprovalStamp,
+  Card,
+  EmptyState,
+  Pill,
+  Topbar,
+} from '../components/ui';
 import { fmtDate, invoiceTotal, money } from '../lib/format';
 import { useSelectors, useStore } from '../lib/hooks';
 import { reminderTimeline, rulesOf } from '../lib/reminders';
@@ -98,16 +106,15 @@ export function Invoices() {
         <Topbar eyebrow="Billing" title="Invoices" />
         <div className="content">
           <EmptyState
-            icon={<Icon name="file" />}
             title="No invoices yet"
             action={
-              <button className="btn btn-primary" onClick={() => navigate('/clients')}>
+              <button className="btn" onClick={() => navigate('/clients')}>
                 <Icon name="users" /> Go to clients
               </button>
             }
           >
-            Invoices are generated from a client's unbilled tasks — open a client and use "Generate
-            invoice" once you've logged some hours.
+            Log your hours, then open the client and choose "Generate invoice". Your agent drafts
+            it for you to check.
           </EmptyState>
         </div>
       </>
@@ -189,6 +196,19 @@ export function InvoiceDetail() {
     toast('Invoice marked as paid');
   }
 
+  const draft = invoice.status === 'draft';
+  const hours = invoice.items.reduce((s, it) => s + it.qty, 0);
+  // Retainers bill hours; fixed-fee projects bill milestones, where qty is a count.
+  const hourly = client?.type !== 'Project';
+  const rates = new Set(invoice.items.map((it) => it.rate));
+  const lines = `${invoice.items.length} line${invoice.items.length === 1 ? '' : 's'}`;
+  const summary = !hourly
+    ? lines
+    : rates.size === 1
+      ? `${hours}h × ${money(invoice.items[0].rate, client?.currency)}`
+      : `${hours}h across ${lines}`;
+  const approvedOn = invoice.approvedAt ?? invoice.issueDate;
+
   return (
     <>
       <Topbar
@@ -199,12 +219,12 @@ export function InvoiceDetail() {
             <button className="btn" onClick={() => window.print()}>
               <Icon name="print" /> Print / save PDF
             </button>
-            {invoice.status === 'draft' ? (
+            {draft ? (
               <button className="btn btn-primary" onClick={approve}>
                 <Icon name="check" /> Approve &amp; send
               </button>
             ) : invoice.status !== 'paid' ? (
-              <button className="btn btn-primary" onClick={markPaid}>
+              <button className="btn" onClick={markPaid}>
                 <Icon name="check" /> Mark as paid
               </button>
             ) : null}
@@ -217,25 +237,31 @@ export function InvoiceDetail() {
           <Link to="/invoices">← All invoices</Link>
         </div>
 
-        {invoice.status === 'draft' ? (
+        {draft ? (
           <div className="doc-aside no-print">
             <AgentNote
-              did={`drafted this invoice from ${invoice.items.reduce((s, it) => s + it.qty, 0)}h of logged work.`}
+              did={
+                hourly
+                  ? `drafted this invoice from ${hours}h of logged work.`
+                  : 'drafted this invoice from the agreed milestones.'
+              }
               privacy={`Only the invoice is shared with ${client?.name ?? 'your client'}`}
               needsOk="It's sent only when you click Approve & send"
-              action={
-                <button className="btn btn-primary btn-sm" onClick={approve}>
-                  <Icon name="check" /> Approve &amp; send
-                </button>
-              }
             />
           </div>
         ) : (
           <Reminders invoice={invoice} clientName={client?.name} clientEmail={client?.email} />
         )}
 
+        <Provenance
+          invoice={invoice}
+          source={hourly ? `${hours}h of logged work` : 'the agreed milestones'}
+          clientName={client?.name}
+        />
+
         <div className="doc-wrap">
-          <div className="doc">
+          <div className={draft ? 'doc doc-draft' : 'doc'}>
+            {draft ? <div className="draft-tag no-print">Draft by agent</div> : null}
             <div className="doc-head">
               <div>
                 <h2>Invoice</h2>
@@ -257,26 +283,41 @@ export function InvoiceDetail() {
                 <thead>
                   <tr>
                     <th>Description</th>
-                    <th>Qty</th>
-                    <th>Rate</th>
-                    <th>Amount</th>
+                    <th className="num-col">{hourly ? 'Hours' : 'Qty'}</th>
+                    <th className="num-col">Rate</th>
+                    <th className="num-col">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
                   {invoice.items.map((it, idx) => (
                     <tr key={idx}>
                       <td>{it.desc}</td>
-                      <td className="num">{it.qty}</td>
-                      <td className="num">{money(it.rate, client?.currency)}</td>
-                      <td className="num">{money(it.qty * it.rate, client?.currency)}</td>
+                      <td className="num num-col">{hourly ? `${it.qty}h` : it.qty}</td>
+                      <td className="num num-col">{money(it.rate, client?.currency)}</td>
+                      <td className="num num-col">{money(it.qty * it.rate, client?.currency)}</td>
                     </tr>
                   ))}
-                  <tr className="total-row">
-                    <td colSpan={3}>Total</td>
-                    <td className="num">{money(total, client?.currency)}</td>
-                  </tr>
                 </tbody>
               </table>
+            </div>
+
+            <div className="doc-total">
+              <div className="doc-total-figures">
+                <span className="doc-total-label">Client pays</span>
+                <span className="doc-total-amount num">{money(total, client?.currency)}</span>
+                <span className="doc-total-sum num">{summary}</span>
+              </div>
+              {draft ? null : invoice.status === 'paid' ? (
+                <ApprovalStamp
+                  label="Paid"
+                  by={client?.name ?? 'Client'}
+                  date={fmtDate(invoice.paidAt ?? approvedOn)}
+                />
+              ) : (
+                <div className="no-print">
+                  <ApprovalStamp label="Approved" by="by you" date={fmtDate(approvedOn)} />
+                </div>
+              )}
             </div>
 
             <div className="doc-note">
@@ -287,5 +328,59 @@ export function InvoiceDetail() {
         </div>
       </div>
     </>
+  );
+}
+
+/** Who prepared the invoice, who approved it, and what the agent did along the way. */
+function Provenance({
+  invoice,
+  source,
+  clientName,
+}: {
+  invoice: Invoice;
+  source: string;
+  clientName?: string;
+}) {
+  const draft = invoice.status === 'draft';
+  const approvedOn = invoice.approvedAt ?? invoice.issueDate;
+  const log: { date: string; who: 'Agent' | 'You'; what: string }[] = [
+    {
+      date: invoice.issueDate,
+      who: 'Agent',
+      what: `Drafted ${invoice.number} from ${source} for ${clientName ?? 'this client'}`,
+    },
+  ];
+  if (draft) log.push({ date: invoice.issueDate, who: 'Agent', what: 'Waiting for your OK' });
+  else log.push({ date: approvedOn, who: 'You', what: `Approved and sent it to ${clientName ?? 'the client'}` });
+  for (const r of invoice.reminders ?? []) {
+    log.push({
+      date: r.date,
+      who: 'You',
+      what: r.step === 'manual' ? 'Sent a reminder by hand' : 'Approved the firmer reminder',
+    });
+  }
+  if (invoice.status === 'paid')
+    log.push({ date: invoice.paidAt ?? approvedOn, who: 'You', what: 'Marked it as paid' });
+
+  return (
+    <details className="provenance doc-aside no-print">
+      <summary>
+        <AgentMark />
+        <span>
+          Prepared by your agent ·{' '}
+          <strong>{draft ? 'Waiting for your approval' : `Approved by you, ${fmtDate(approvedOn)}`}</strong>
+        </span>
+        <span className="provenance-toggle">Log</span>
+      </summary>
+      <ol className="provenance-log">
+        {log.map((e, n) => (
+          <li key={n} className={e.who === 'You' ? 'by-you' : undefined}>
+            <span className="num">{fmtDate(e.date)}</span>
+            <span>{e.who}</span>
+            <span>{e.what}</span>
+          </li>
+        ))}
+      </ol>
+    </details>
   );
 }
