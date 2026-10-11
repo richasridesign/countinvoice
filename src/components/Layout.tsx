@@ -1,99 +1,136 @@
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Icon, type IconName } from './Icon';
+import { Icon } from './Icon';
+import { Logo } from './ui';
 import { useSelectors, useStore } from '../lib/hooks';
 
-const NAV: { to: string; label: string; icon: IconName }[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: 'grid' },
-  { to: '/clients', label: 'Clients', icon: 'users' },
-  { to: '/agreements', label: 'Agreements', icon: 'sign' },
-  { to: '/tasks', label: 'Tasks', icon: 'check' },
-  { to: '/invoices', label: 'Invoices', icon: 'file' },
+const NAV: { to: string; label: string }[] = [
+  { to: '/dashboard', label: 'Dashboard' },
+  { to: '/clients', label: 'Clients' },
+  { to: '/agreements', label: 'Agreements' },
+  { to: '/tasks', label: 'Tasks' },
+  { to: '/invoices', label: 'Invoices' },
 ];
 
-export function Layout() {
+/** Settings and the prototype's data controls, behind the workspace button. */
+function WorkspaceMenu() {
   const { dispatch, toast } = useStore();
   const { hasAnyData } = useSelectors();
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    wrap.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        trigger.current?.focus();
+      }
+    }
+    function onClick(e: MouseEvent) {
+      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onClick);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onClick);
+    };
+  }, [open]);
+
+  function run(fn: () => void) {
+    setOpen(false);
+    fn();
+  }
 
   return (
-    <div className="app-shell">
-      <div className="sidebar">
-        <div className="brand">
-          <div className="brand-mark">C</div>
-          <div className="brand-name">CountInvoice</div>
+    <div className="menu-wrap" ref={wrap}>
+      <button
+        ref={trigger}
+        className="appbar-account"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        Your workspace
+        <Icon name="chevron" />
+      </button>
+      {open ? (
+        <div className="menu" role="menu">
+          <button role="menuitem" onClick={() => run(() => navigate('/settings'))}>
+            Settings
+          </button>
+          <div className="menu-sep" role="separator" />
+          <button
+            role="menuitem"
+            onClick={() =>
+              run(() => {
+                dispatch({ type: 'loadSample' });
+                toast('Sample data loaded');
+                navigate('/dashboard');
+              })
+            }
+          >
+            Load sample data
+          </button>
+          {hasAnyData ? (
+            <button
+              role="menuitem"
+              onClick={() =>
+                run(() => {
+                  dispatch({ type: 'clear' });
+                  toast('Workspace cleared');
+                  navigate('/dashboard');
+                })
+              }
+            >
+              Clear workspace
+            </button>
+          ) : null}
+          <button
+            role="menuitem"
+            onClick={() =>
+              run(() => {
+                dispatch({ type: 'signOut' });
+                navigate('/welcome');
+              })
+            }
+          >
+            Sign-in screen
+          </button>
         </div>
+      ) : null}
+    </div>
+  );
+}
 
-        <div className="nav">
+export function Layout() {
+  return (
+    <div className="app-shell">
+      <header className="appbar">
+        <NavLink to="/dashboard" className="appbar-logo" aria-label="CountInvoice dashboard">
+          <Logo />
+        </NavLink>
+        <nav className="appbar-nav" aria-label="Main">
           {NAV.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              className={({ isActive }) => `appbar-link ${isActive ? 'active' : ''}`}
             >
-              <Icon name={item.icon} />
-              <span>{item.label}</span>
+              {item.label}
             </NavLink>
           ))}
-        </div>
+        </nav>
+        <WorkspaceMenu />
+      </header>
 
-        <div className="nav-spacer" />
-
-        <div className="nav">
-          <NavLink
-            to="/settings"
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-          >
-            <Icon name="gear" />
-            <span>Settings</span>
-          </NavLink>
-        </div>
-
-        <div className="sidebar-footer">
-          <div className="avatar">FL</div>
-          <div>
-            <div className="who">Your workspace</div>
-            <button
-              className="reset-link"
-              onClick={() => {
-                dispatch({ type: 'loadSample' });
-                toast('Sample data loaded');
-                navigate('/dashboard');
-              }}
-            >
-              Load sample data
-            </button>
-            {hasAnyData ? (
-              <>
-                {' · '}
-                <button
-                  className="reset-link"
-                  onClick={() => {
-                    dispatch({ type: 'clear' });
-                    toast('Workspace cleared');
-                    navigate('/dashboard');
-                  }}
-                >
-                  Clear
-                </button>
-              </>
-            ) : null}
-            {' · '}
-            <button
-              className="reset-link"
-              onClick={() => {
-                dispatch({ type: 'signOut' });
-                navigate('/welcome');
-              }}
-            >
-              Sign-in screen
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="main">
+      <main className="main">
         <Outlet />
-      </div>
+      </main>
     </div>
   );
 }
