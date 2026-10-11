@@ -84,13 +84,19 @@ export function EmptyState({
   );
 }
 
-/** The agent's mark: a dashed monogram, so its work never looks like yours. */
-export function AgentMark() {
+/** The wordmark: lowercase name plus the stamp-red square. */
+export function Logo({ size = 'md' }: { size?: 'md' | 'lg' }) {
   return (
-    <span className="agent-mark" aria-hidden="true">
-      ci
+    <span className={`logo logo-${size}`}>
+      countinvoice
+      <span className="logo-mark" aria-hidden="true" />
     </span>
   );
+}
+
+/** The agent's mark: a stamp-red ring, the same red as its margin line. */
+export function AgentMark() {
+  return <span className="agent-mark" aria-hidden="true" />;
 }
 
 /** Ink stamp shown only once the freelancer (or client) has approved something. */

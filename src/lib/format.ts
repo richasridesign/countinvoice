@@ -8,7 +8,8 @@ export function money(n: number, currency: Currency = 'EUR'): string {
   return (
     sym +
     Number(n).toLocaleString('en-US', {
-      minimumFractionDigits: 0,
+      // Whole amounts stay short (€2,100); anything with cents shows both digits (€487.50).
+      minimumFractionDigits: Number.isInteger(Number(n)) ? 0 : 2,
       maximumFractionDigits: 2,
     })
   );

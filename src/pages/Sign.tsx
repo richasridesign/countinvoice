@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { AgreementDoc } from '../components/AgreementDoc';
 import { FileDrop, UploadedAgreementDoc } from '../components/AgreementFiles';
 import { Icon } from '../components/Icon';
+import { Logo } from '../components/ui';
 import { storeUpload } from '../lib/files';
 import { fmtDate } from '../lib/format';
 import { useSelectors, useStore } from '../lib/hooks';
@@ -76,8 +77,7 @@ export function Sign({ preview = false }: { preview?: boolean }) {
     return (
       <div className="sign-page">
         <div className="sign-header">
-          <div className="brand-mark">C</div>
-          <div className="brand-name display">CountInvoice</div>
+          <Logo />
         </div>
         <div className="sign-panel">
           <h3>Link not found</h3>
@@ -210,8 +210,7 @@ export function Sign({ preview = false }: { preview?: boolean }) {
   return (
     <div className="sign-page">
       <div className="sign-header">
-        <div className="brand-mark">C</div>
-        <div className="brand-name display">CountInvoice</div>
+        <Logo />
       </div>
       <div className="sign-eyebrow">
         {preview ? 'Preview' : `Sent to ${client.name} for signature`}

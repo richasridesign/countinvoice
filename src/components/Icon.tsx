@@ -32,6 +32,7 @@ const PATHS: Record<string, React.ReactNode> = {
   ),
   plus: <path d="M12 5v14M5 12h14" strokeWidth="1.8" />,
   back: <path d="M15 18l-6-6 6-6" strokeWidth="1.8" />,
+  chevron: <path d="M6 9l6 6 6-6" strokeWidth="1.8" />,
   mail: (
     <>
       <rect x="3" y="5" width="18" height="14" rx="2.2" />

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '../components/Icon';
+import { Logo } from '../components/ui';
 import { useStore } from '../lib/hooks';
 
 export function Welcome() {
@@ -15,12 +16,10 @@ export function Welcome() {
     <>
       <div className="welcome">
         <div className="welcome-card">
-          <div className="welcome-mark">C</div>
-          <h1>
-            An agent that runs
-            <br />
-            your paperwork.
-          </h1>
+          <div className="welcome-mark">
+            <Logo size="lg" />
+          </div>
+          <h1>An agent that runs your paperwork.</h1>
           <p className="lede">
             Your CountInvoice agent drafts each client's agreement, tracks the hours, and prepares
             the invoices. Nothing goes out to a client until you approve it.

@@ -2,6 +2,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { Card, EmptyState, PaperStack, Pill, Topbar } from '../components/ui';
 import { fmtDate, invoiceTotal, money } from '../lib/format';
+import { TODAY } from '../lib/types';
+import type { Invoice } from '../lib/types';
 import { useSelectors, useStore } from '../lib/hooks';
 import { gettingPaid } from '../lib/reminders';
 
@@ -61,14 +63,14 @@ export function Dashboard() {
     );
   }
 
-  const outstanding = state.invoices
-    .filter((i) => i.status === 'sent' || i.status === 'overdue')
-    .reduce((s, i) => s + invoiceTotal(i), 0);
-  const overdueCount = state.invoices.filter((i) => i.status === 'overdue').length;
-  const weekHours = state.tasks
-    .filter((t) => t.date >= '2026-09-01')
+  const sumOf = (list: Invoice[]) => list.reduce((s, i) => s + invoiceTotal(i), 0);
+  const overdue = state.invoices.filter((i) => i.status === 'overdue');
+  const waiting = state.invoices.filter((i) => i.status === 'sent');
+  const outstanding = sumOf(overdue) + sumOf(waiting);
+  const paidTotal = sumOf(state.invoices.filter((i) => i.status === 'paid'));
+  const unbilledHours = state.tasks
+    .filter((t) => t.status === 'logged')
     .reduce((s, t) => s + t.hours, 0);
-  const activeClients = state.clients.filter((c) => c.status !== 'draft').length;
 
   const recentTasks = state.tasks.slice(-4).reverse();
   const pendingAgreements = state.clients.filter(
@@ -76,8 +78,9 @@ export function Dashboard() {
   );
   const pendingInvoices = state.invoices.filter((i) => i.status === 'draft');
   const paid = gettingPaid(state);
-  const queueEmpty =
-    pendingAgreements.length === 0 && pendingInvoices.length === 0 && paid.needsOk.length === 0;
+  const queueCount = pendingAgreements.length + pendingInvoices.length + paid.needsOk.length;
+  const urgent = mostUrgent(state.invoices, paid.needsOk);
+  const urgentClient = urgent ? clientById(urgent.invoice.clientId) : undefined;
 
   return (
     <>
@@ -96,87 +99,86 @@ export function Dashboard() {
       />
 
       <div className="content">
-        <div className="paid-strip">
-          <Icon name="bell" />
-          <span>
-            <strong>Getting paid</strong>
-            <span>{money(outstanding, 'EUR')} outstanding</span>
-            <span>
-              {overdueCount} overdue
-            </span>
-            <span>
-              {paid.needsOk.length
-                ? `${paid.needsOk.length} reminder${paid.needsOk.length === 1 ? '' : 's'} waiting for your OK`
-                : paid.nextDate
-                  ? `next reminder ${fmtDate(paid.nextDate)}`
-                  : paid.open.length
-                    ? 'no reminders scheduled'
-                    : 'nothing outstanding'}
-            </span>
-          </span>
-          <Link to="/invoices" className="law-link">
-            View invoices
-          </Link>
-        </div>
+        <section className="dash-hero" aria-label="Getting paid">
+          <div>
+            <div className="dash-label">Outstanding · as of {fmtDate(TODAY)}</div>
+            <div className="money dash-total">{money(outstanding, 'EUR')}</div>
+            <dl className="dash-stats">
+              <div>
+                <dt>Overdue</dt>
+                <dd className={overdue.length ? 'is-overdue num' : 'num'}>
+                  {money(sumOf(overdue), 'EUR')}
+                </dd>
+              </div>
+              <div>
+                <dt>Waiting on client</dt>
+                <dd className="num">{money(sumOf(waiting), 'EUR')}</dd>
+              </div>
+              <div>
+                <dt>Hours not invoiced</dt>
+                <dd className="num">{unbilledHours} h</dd>
+              </div>
+              <div>
+                <dt>Paid to date</dt>
+                <dd className="num">{money(paidTotal, 'EUR')}</dd>
+              </div>
+            </dl>
+          </div>
+          <PaidChart invoices={state.invoices} />
+        </section>
 
-        <div className="grid-tiles">
-          <div className="tile">
-            <div className="label">Outstanding</div>
-            <div className="value">{money(outstanding, 'EUR')}</div>
-            <div className="sub">
-              {overdueCount} invoice{overdueCount === 1 ? '' : 's'} overdue
+        {urgent ? (
+          <div className="urgent">
+            <div className="urgent-body">
+              <span className="urgent-label">Most urgent</span>
+              <strong>
+                {urgent.kind === 'draft'
+                  ? `${urgent.invoice.number} for ${urgentClient?.name} is ready to check.`
+                  : `${urgentClient?.name} owes ${money(invoiceTotal(urgent.invoice), urgentClient?.currency)}. It was due ${fmtDate(urgent.invoice.dueDate)}, ${daysLate(urgent.invoice)} days ago.`}
+              </strong>
+              <span>
+                {urgent.kind === 'reminder'
+                  ? 'Your agent drafted a firmer reminder. It won’t send until you approve it.'
+                  : urgent.kind === 'overdue'
+                    ? 'Your agent is sending reminders by your rules.'
+                    : 'Your agent drafted it from your logged hours. It won’t send until you approve it.'}
+              </span>
             </div>
+            <button className="btn" onClick={() => navigate(`/invoices/${urgent.invoice.id}`)}>
+              {urgent.kind === 'reminder'
+                ? 'Review reminder'
+                : urgent.kind === 'overdue'
+                  ? 'View invoice'
+                  : 'Review invoice'}
+            </button>
           </div>
-          <div className="tile">
-            <div className="label">Logged this week</div>
-            <div className="value">{weekHours}h</div>
-            <div className="sub">across {activeClients} active clients</div>
-          </div>
-          <div className="tile">
-            <div className="label">Active clients</div>
-            <div className="value">{activeClients}</div>
-            <div className="sub">{state.clients.length} total in workspace</div>
-          </div>
+        ) : null}
+
+        <div className="section-head">
+          <h2>Needs you</h2>
+          <span>
+            {queueCount} item{queueCount === 1 ? '' : 's'}
+          </span>
         </div>
 
-        <h3 style={{ fontSize: 15, marginBottom: 2 }}>Your agent's queue</h3>
-        <p style={{ color: 'var(--muted)', fontSize: 12.5, margin: '0 0 10px 0' }}>
-          Drafted for you. Nothing reaches a client until you approve it.
-        </p>
-
-        {queueEmpty ? (
-          <div className="empty-state" style={{ padding: '32px 24px', marginBottom: 26 }}>
+        {queueCount === 0 ? (
+          <div className="empty-state" style={{ padding: '32px 24px', marginBottom: 32 }}>
             <PaperStack small />
-            <h3 style={{ fontSize: 15 }}>Your agent's queue is empty</h3>
-            <p style={{ marginBottom: 0 }}>Nothing drafted is waiting on your review right now.</p>
+            <h3 style={{ fontSize: 16 }}>Nothing needs you right now</h3>
+            <p style={{ marginBottom: 0 }}>
+              When your agent drafts something, it waits here for your review.
+            </p>
           </div>
         ) : (
-          <div className="card table-wrap" style={{ marginBottom: 26 }}>
-            <table>
-              <thead>
-                <tr>
-                  <th />
-                  <th>Item</th>
-                  <th>Status</th>
-                  <th>Note</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {pendingAgreements.map((c) => (
-                  <tr key={c.id}>
-                    <td>
-                      <Icon name="sign" />
-                    </td>
-                    <td>
-                      <strong>{c.name}</strong>
-                      <br />
-                      <span style={{ color: 'var(--muted)', fontSize: 12 }}>Agreement</span>
-                    </td>
-                    <td>
-                      <Pill status={c.status} />
-                    </td>
-                    <td style={{ color: 'var(--muted)' }}>
+          <>
+            <ul className="queue">
+              {pendingAgreements.map((c) => {
+                const byAgent = c.status === 'draft' && !c.agreementFile && !c.clientProposal;
+                return (
+                  <li key={c.id} className={byAgent ? 'queue-row by-agent' : 'queue-row'}>
+                    <span className="queue-ref">Agreement</span>
+                    <strong className="queue-client">{c.name}</strong>
+                    <span className="queue-note">
                       {c.clientProposal
                         ? `${c.name} sent their own agreement. Review it.`
                         : c.status === 'draft' && c.agreementFile
@@ -186,104 +188,75 @@ export function Dashboard() {
                             : c.agreementSentAt
                               ? `Sent ${fmtDate(c.agreementSentAt)}. Waiting on their signature.`
                               : 'Waiting on their signature.'}
-                    </td>
-                    <td className="row-actions">
-                      {c.clientProposal ? (
-                        <button
-                          className="btn btn-sm"
-                          onClick={() => navigate(`/agreement/${c.id}`)}
-                        >
-                          <Icon name="file" /> Review
-                        </button>
-                      ) : c.status === 'draft' ? (
-                        <button
-                          className="btn btn-sm"
-                          onClick={() => navigate(`/agreement/${c.id}`)}
-                        >
-                          <Icon name="mail" /> Review &amp; share
-                        </button>
-                      ) : (
-                        <button
-                          className="btn btn-sm"
-                          onClick={() => navigate(`/agreement/${c.id}`)}
-                        >
-                          View
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                    </span>
+                    <span className="queue-status">
+                      <Pill status={c.clientProposal ? 'draft' : c.status} />
+                    </span>
+                    <button
+                      className="btn btn-sm queue-action"
+                      onClick={() => navigate(`/agreement/${c.id}`)}
+                    >
+                      {c.clientProposal || c.status === 'draft' ? 'Review' : 'View'}
+                    </button>
+                  </li>
+                );
+              })}
 
-                {paid.needsOk.map((i) => {
-                  const c = clientById(i.clientId);
-                  return (
-                    <tr key={`r${i.id}`}>
-                      <td>
-                        <Icon name="bell" />
-                      </td>
-                      <td>
-                        <strong>{i.number}</strong>
-                        <br />
-                        <span style={{ color: 'var(--muted)', fontSize: 12 }}>
-                          Reminder to {c?.name}
-                        </span>
-                      </td>
-                      <td>
-                        <Pill status="overdue" />
-                      </td>
-                      <td style={{ color: 'var(--muted)' }}>
-                        14 days overdue. Your agent drafted a firmer reminder.
-                      </td>
-                      <td className="row-actions">
-                        <button
-                          className="btn btn-sm"
-                          onClick={() => navigate(`/invoices/${i.id}`)}
-                        >
-                          <Icon name="mail" /> Review
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+              {paid.needsOk.map((i) => {
+                const c = clientById(i.clientId);
+                return (
+                  <li key={`r${i.id}`} className="queue-row by-agent">
+                    <span className="queue-ref num">{i.number}</span>
+                    <strong className="queue-client">{c?.name}</strong>
+                    <span className="queue-note">
+                      {daysLate(i)} days late. Your agent drafted a firmer reminder.
+                    </span>
+                    <span className="queue-status">
+                      <Pill status="overdue" />
+                    </span>
+                    <button
+                      className="btn btn-sm queue-action"
+                      onClick={() => navigate(`/invoices/${i.id}`)}
+                    >
+                      Review reminder
+                    </button>
+                  </li>
+                );
+              })}
 
-                {pendingInvoices.map((i) => {
-                  const c = clientById(i.clientId);
-                  if (!c) return null;
-                  return (
-                    <tr key={i.id}>
-                      <td>
-                        <Icon name="file" />
-                      </td>
-                      <td>
-                        <strong>{i.number}</strong>
-                        <br />
-                        <span style={{ color: 'var(--muted)', fontSize: 12 }}>
-                          Invoice for {c.name}
-                        </span>
-                      </td>
-                      <td>
-                        <Pill status="draft" />
-                      </td>
-                      <td style={{ color: 'var(--muted)' }}>
-                        Your agent drafted it from logged hours: {money(invoiceTotal(i), c.currency)}
-                      </td>
-                      <td className="row-actions">
-                        <button
-                          className="btn btn-sm"
-                          onClick={() => navigate(`/invoices/${i.id}`)}
-                        >
-                          <Icon name="check" /> Review &amp; approve
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+              {pendingInvoices.map((i) => {
+                const c = clientById(i.clientId);
+                if (!c) return null;
+                return (
+                  <li key={i.id} className="queue-row by-agent">
+                    <span className="queue-ref num">{i.number}</span>
+                    <strong className="queue-client">{c.name}</strong>
+                    <span className="queue-note">
+                      Your agent drafted it from logged hours:{' '}
+                      <span className="num">{money(invoiceTotal(i), c.currency)}</span>
+                    </span>
+                    <span className="queue-status">
+                      <Pill status="draft" />
+                    </span>
+                    <button
+                      className="btn btn-sm queue-action"
+                      onClick={() => navigate(`/invoices/${i.id}`)}
+                    >
+                      Review
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="queue-legend">
+              Red margin line = written by your agent. Nothing leaves without your OK.
+            </p>
+          </>
         )}
 
-        <h3 style={{ fontSize: 15, marginBottom: 10 }}>Recent activity</h3>
+        <div className="section-head">
+          <h2>Recent activity</h2>
+        </div>
         {recentTasks.length > 0 ? (
           <Card>
             <table>
@@ -292,7 +265,7 @@ export function Dashboard() {
                   <th>Date</th>
                   <th>Task</th>
                   <th>Client</th>
-                  <th>Hours</th>
+                  <th className="num-col">Hours</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -302,7 +275,7 @@ export function Dashboard() {
                     <td className="num">{fmtDate(t.date)}</td>
                     <td>{t.title}</td>
                     <td>{clientById(t.clientId)?.name}</td>
-                    <td className="num">{t.hours ? `${t.hours}h` : '—'}</td>
+                    <td className="num num-col">{t.hours ? `${t.hours}h` : '—'}</td>
                     <td>
                       <Pill status={t.status} />
                     </td>
@@ -325,5 +298,79 @@ export function Dashboard() {
         )}
       </div>
     </>
+  );
+}
+
+function daysLate(i: Invoice): number {
+  const ms = new Date(TODAY + 'T00:00:00Z').getTime() - new Date(i.dueDate + 'T00:00:00Z').getTime();
+  return Math.max(0, Math.round(ms / 86400000));
+}
+
+/** The one thing worth a tinted panel: a reminder waiting on you, then the oldest overdue, then a draft. */
+function mostUrgent(
+  invoices: Invoice[],
+  needsOk: Invoice[],
+): { invoice: Invoice; kind: 'reminder' | 'overdue' | 'draft' } | null {
+  if (needsOk.length) return { invoice: needsOk[0], kind: 'reminder' };
+  const overdue = invoices
+    .filter((i) => i.status === 'overdue')
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  if (overdue.length) return { invoice: overdue[0], kind: 'overdue' };
+  const draft = invoices.find((i) => i.status === 'draft');
+  return draft ? { invoice: draft, kind: 'draft' } : null;
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** Billed per month by issue date, split into paid and still owed. Drafts are left out. */
+function PaidChart({ invoices }: { invoices: Invoice[] }) {
+  const billed = invoices.filter((i) => i.status !== 'draft');
+  const end = new Date(TODAY + 'T00:00:00Z');
+  const first = billed.reduce(
+    (min, i) => (i.issueDate < min ? i.issueDate : min),
+    TODAY,
+  );
+  const startDate = new Date(first.slice(0, 7) + '-01T00:00:00Z');
+  let span =
+    (end.getUTCFullYear() - startDate.getUTCFullYear()) * 12 +
+    end.getUTCMonth() -
+    startDate.getUTCMonth() +
+    1;
+  span = Math.min(6, Math.max(3, span));
+
+  const months = Array.from({ length: span }, (_, k) => {
+    const d = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - (span - 1 - k), 1));
+    const key = d.toISOString().slice(0, 7);
+    const inMonth = billed.filter((i) => i.issueDate.startsWith(key));
+    const paid = inMonth.filter((i) => i.status === 'paid').reduce((s, i) => s + invoiceTotal(i), 0);
+    const owed = inMonth.filter((i) => i.status !== 'paid').reduce((s, i) => s + invoiceTotal(i), 0);
+    return { label: MONTHS[d.getUTCMonth()], paid, owed };
+  });
+  const max = Math.max(1, ...months.map((m) => Math.max(m.paid, m.owed)));
+  const summary = months
+    .map((m) => `${m.label}: ${money(m.paid, 'EUR')} paid, ${money(m.owed, 'EUR')} owed`)
+    .join('; ');
+
+  return (
+    <figure className="chart">
+      <figcaption className="chart-head">
+        <span>Paid vs owed · by month billed</span>
+        <span className="chart-legend" aria-hidden="true">
+          <span className="key-paid">Paid</span>
+          <span className="key-owed">Owed</span>
+        </span>
+      </figcaption>
+      <div className="chart-bars" role="img" aria-label={summary}>
+        {months.map((m) => (
+          <div key={m.label} className="chart-month">
+            <div className="chart-pair">
+              <span className="bar bar-paid" style={{ height: `${(m.paid / max) * 100}%` }} />
+              <span className="bar bar-owed" style={{ height: `${(m.owed / max) * 100}%` }} />
+            </div>
+            <span className="chart-label">{m.label}</span>
+          </div>
+        ))}
+      </div>
+    </figure>
   );
 }
