@@ -55,6 +55,7 @@ const sampleClients: Client[] = [
       { label: 'Project kickoff', pct: 50 },
       { label: 'Final delivery', pct: 50 },
     ],
+    phone: '+31 20 555 0142',
     notes: 'Fixed-fee dashboard redesign, delivered in two milestones.',
   },
   {
@@ -81,7 +82,7 @@ const sampleTasks: Task[] = [
   { id: 't3', clientId: 'c1', title: 'Client review call + notes', date: '2026-09-02', hours: 1, status: 'logged' },
   { id: 't4', clientId: 'c1', title: 'Onboarding email templates', date: '2026-09-04', hours: 2.5, status: 'logged' },
   { id: 't5', clientId: 'c2', title: 'Milestone 1 — kickoff & wireframes', date: '2026-07-14', hours: 0, status: 'invoiced' },
-  { id: 't6', clientId: 'c2', title: 'Milestone 2 — final delivery', date: '2026-08-10', hours: 0, status: 'invoiced' },
+  { id: 't6', clientId: 'c2', title: 'Milestone 2 — final delivery', date: '2026-08-04', hours: 0, status: 'invoiced' },
   { id: 't7', clientId: 'c3', title: 'Kickoff call & scope notes', date: '2026-09-05', hours: 1, status: 'logged' },
 ];
 
@@ -102,10 +103,12 @@ const sampleInvoices: Invoice[] = [
     id: 'i2',
     number: 'INV-1002',
     clientId: 'c2',
-    issueDate: '2026-08-11',
-    dueDate: '2026-08-25',
+    issueDate: '2026-08-05',
+    dueDate: '2026-08-19',
     status: 'overdue',
     items: [{ desc: 'Milestone 2 of 2 — final delivery', qty: 1, rate: 2100 }],
+    // The 14-day reminder was approved, so the 21-day voice call is the next step.
+    reminders: [{ date: '2026-09-02', step: 'over14' }],
   },
   {
     id: 'i3',

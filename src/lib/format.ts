@@ -24,6 +24,12 @@ export function fmtDate(d: string): string {
   });
 }
 
+/** "Fri 11 Sep": a short date with its weekday. */
+export function fmtDay(d: string): string {
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
 export function invoiceTotal(inv: Invoice): number {
   return inv.items.reduce((sum, it) => sum + it.qty * it.rate, 0);
 }

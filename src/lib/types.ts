@@ -53,6 +53,8 @@ export interface Client {
   agreementSentAt?: string;
   agreementSignedAt?: string;
   signatureName?: string;
+  /** For the voice call step. Asked for in the call dialog when missing. */
+  phone?: string;
   /** Present when an uploaded file replaces the generated agreement. */
   agreementFile?: AgreementFile;
   /** Signed before it reached CountInvoice. */
@@ -90,16 +92,30 @@ export interface Invoice {
   /** Reminders sent by hand, or ones that needed (and got) the freelancer's OK. */
   reminders?: ReminderLog[];
   remindersPaused?: boolean;
+  /** The voice call step: approved and booked, skipped, or finished. */
+  call?: VoiceCall;
 }
 
-export type ReminderStep = 'before3' | 'due' | 'over7' | 'over14';
+export type ReminderStep = 'before3' | 'due' | 'over7' | 'over14' | 'call21';
+
+export type CallOutcome = 'promised' | 'no-answer' | 'disputed';
+
+export interface VoiceCall {
+  status: 'scheduled' | 'skipped' | 'done';
+  phone: string;
+  /** The day the call is booked for, 10:00 to 12:00 in the client's time. */
+  callDate: string;
+  outcome?: CallOutcome;
+  /** Set when the client promised to pay. */
+  payDate?: string;
+}
 
 export interface ReminderLog {
   date: string;
   step: ReminderStep | 'manual';
 }
 
-/** Which automatic reminders the agent sends. `over14` always waits for approval. */
+/** Which automatic reminders the agent sends. `over14` and `call21` always wait for approval. */
 export type ReminderRules = Record<ReminderStep, boolean>;
 
 export type CalendarProvider = 'Google' | 'Outlook';

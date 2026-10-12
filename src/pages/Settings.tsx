@@ -79,12 +79,11 @@ function ReminderSettings() {
         {REMINDER_STEPS.map((step) => (
           <label className="rule" key={step.key}>
             <span className="rule-body">
-              <strong>{step.label}</strong>
-              <span>
-                {step.ask
-                  ? 'Your agent drafts a firmer reminder and waits for your OK.'
-                  : 'Sent automatically with your template.'}
-              </span>
+              <strong>
+                {step.label}
+                {step.isNew ? <span className="tag-new">New</span> : null}
+              </strong>
+              <span>{step.hint}</span>
             </span>
             <input
               type="checkbox"
