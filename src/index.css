@@ -362,7 +362,7 @@
   }
   .welcome-card{max-width:420px; width:100%; text-align:center;}
   .welcome-mark{display:flex; justify-content:center; margin:0 auto 28px auto;}
-  .welcome h1{font-size:27px; margin-bottom:10px;}
+  .welcome h1{font-size:28px; line-height:32px; margin-bottom:12px;}
   .welcome p.lede{color:var(--muted); font-size:14px; max-width:360px; margin:0 auto 26px auto;}
   .welcome .field{text-align:left; margin-bottom:10px;}
   .welcome .btn-primary{width:100%; justify-content:center; padding:11px;}
