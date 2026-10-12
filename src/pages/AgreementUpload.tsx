@@ -81,6 +81,9 @@ export function AgreementUpload() {
               Cancel
             </Link>
           </div>
+        <p className="hint">
+          <span className="req" aria-hidden="true">*</span> Required
+        </p>
         </form>
       </div>
     </>

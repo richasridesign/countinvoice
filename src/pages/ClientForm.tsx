@@ -208,7 +208,7 @@ export function ClientForm() {
           <div className="field-row">
             <div className="field">
               <label>
-                Client or company name <span className="req">*</span>
+                Client or company name <span className="req" aria-hidden="true">*</span>
               </label>
               <input
                 type="text"
@@ -220,7 +220,7 @@ export function ClientForm() {
             </div>
             <div className="field">
               <label>
-                Client email <span className="req">*</span>
+                Client email <span className="req" aria-hidden="true">*</span>
               </label>
               <input
                 type="email"
@@ -268,7 +268,7 @@ export function ClientForm() {
             </div>
             <div className="field">
               <label>
-                Rate <span className="req">*</span> <PrefillTag show={prefilled.has('rate')} />
+                Rate <span className="req" aria-hidden="true">*</span> <PrefillTag show={prefilled.has('rate')} />
               </label>
               <input
                 className="mono-input"
@@ -337,7 +337,7 @@ export function ClientForm() {
           </div>
 
           <p className="hint">
-            <span className="req">*</span> Required
+            <span className="req" aria-hidden="true">*</span> Required
           </p>
         </form>
       </div>

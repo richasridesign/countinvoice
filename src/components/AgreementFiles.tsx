@@ -279,7 +279,7 @@ export function AgreementUploadFields({
     <>
       <div className="field">
         <label>
-          Agreement file <span className="req">*</span>
+          Agreement file <span className="req" aria-hidden="true">*</span>
         </label>
         <FileDrop file={file} onChange={onFile} />
       </div>
@@ -327,7 +327,9 @@ export function AgreementUploadFields({
       {signed ? (
         <div className="field-row">
           <div className="field">
-            <label>Signed on</label>
+            <label>
+              Signed on <span className="req" aria-hidden="true">*</span>
+            </label>
             <input type="date" name="signedOn" defaultValue={TODAY} max={TODAY} required />
           </div>
           <div className="field">

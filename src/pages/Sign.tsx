@@ -161,7 +161,9 @@ export function Sign({ preview = false }: { preview?: boolean }) {
                 <input type="checkbox" name="agree" required /> {agreeText}
               </label>
               <div className="field">
-                <label>Type your full name to sign</label>
+                <label>
+                  Type your full name to sign <span className="req" aria-hidden="true">*</span>
+                </label>
                 <input type="text" name="signature" placeholder={`e.g. ${client.name}`} required />
               </div>
               <div className="form-actions">
@@ -169,6 +171,9 @@ export function Sign({ preview = false }: { preview?: boolean }) {
                   <Icon name="check" /> Accept &amp; sign agreement
                 </button>
               </div>
+            <p className="hint">
+              <span className="req" aria-hidden="true">*</span> Required
+            </p>
             </form>
             {proposing ? (
               <ProposeOwnAgreement clientId={client.id} onDone={() => setProposing(false)} />
