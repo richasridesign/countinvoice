@@ -18,6 +18,7 @@ import type {
   Client,
   ClientProposal,
   Invoice,
+  CallOutcome,
   ReminderRules,
   ReminderStep,
   Task,
@@ -71,6 +72,10 @@ export type Action =
   | { type: 'sendReminder'; id: string }
   | { type: 'approveReminder'; id: string; step: ReminderStep }
   | { type: 'pauseReminders'; id: string; paused: boolean }
+  | { type: 'scheduleCall'; id: string; phone: string; callDate: string }
+  | { type: 'skipCall'; id: string }
+  | { type: 'resetCall'; id: string }
+  | { type: 'finishCall'; id: string; outcome: CallOutcome; payDate?: string }
   | { type: 'connectCalendar'; provider: CalendarProvider }
   | { type: 'disconnectCalendar' }
   | { type: 'updateDraft'; id: string; patch: Partial<CalendarDraft> }
@@ -284,6 +289,48 @@ function reducer(state: AppState, action: Action): AppState {
 
     case 'pauseReminders':
       return patchInvoice(state, action.id, (i) => ({ ...i, remindersPaused: action.paused }));
+
+    case 'scheduleCall': {
+      const next = patchInvoice(state, action.id, (i) => ({
+        ...i,
+        reminders: [...(i.reminders ?? []), { date: TODAY, step: 'call21' }],
+        call: { status: 'scheduled', phone: action.phone, callDate: action.callDate },
+      }));
+      // Remember the number on the client so it isn't asked for again.
+      const clientId = state.invoices.find((i) => i.id === action.id)?.clientId;
+      return {
+        ...next,
+        clients: next.clients.map((c) =>
+          c.id === clientId && !c.phone ? { ...c, phone: action.phone } : c,
+        ),
+      };
+    }
+
+    case 'skipCall':
+      return patchInvoice(state, action.id, (i) => ({
+        ...i,
+        call: { status: 'skipped', phone: i.call?.phone ?? '', callDate: TODAY },
+      }));
+
+    case 'resetCall':
+      return patchInvoice(state, action.id, (i) => ({
+        ...i,
+        call: undefined,
+        reminders: (i.reminders ?? []).filter((l) => l.step !== 'call21'),
+      }));
+
+    case 'finishCall':
+      return patchInvoice(state, action.id, (i) => ({
+        ...i,
+        // A dispute stops the reminders so the agent doesn't chase a contested invoice.
+        remindersPaused: action.outcome === 'disputed' ? true : i.remindersPaused,
+        call: {
+          ...(i.call ?? { phone: '', callDate: TODAY }),
+          status: 'done',
+          outcome: action.outcome,
+          payDate: action.payDate,
+        },
+      }));
 
     case 'connectCalendar':
       return {

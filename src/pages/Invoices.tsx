@@ -1,5 +1,8 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useRef, useState } from 'react';
+import { CallDialog } from '../components/CallDialog';
 import { Icon } from '../components/Icon';
+import { Menu } from '../components/Menu';
 import {
   AgentMark,
   AgentNote,
@@ -9,22 +12,25 @@ import {
   Pill,
   Topbar,
 } from '../components/ui';
-import { fmtDate, invoiceTotal, money } from '../lib/format';
+import { fmtDate, fmtDay, invoiceTotal, money } from '../lib/format';
 import { useSelectors, useStore } from '../lib/hooks';
-import { reminderTimeline, rulesOf } from '../lib/reminders';
-import type { Invoice } from '../lib/types';
+import { addWorkingDays, outcomeText, reminderTimeline, rulesOf } from '../lib/reminders';
+import { TODAY } from '../lib/types';
+import type { Client, Invoice } from '../lib/types';
 
 /** What the agent sent for this invoice and what comes next. */
 function Reminders({
   invoice,
-  clientName,
-  clientEmail,
+  client,
 }: {
   invoice: Invoice;
-  clientName?: string;
-  clientEmail?: string;
+  client?: Client;
 }) {
   const { state, dispatch, toast } = useStore();
+  const [calling, setCalling] = useState(false);
+  const approveCall = useRef<HTMLButtonElement>(null);
+  const clientName = client?.name;
+  const clientEmail = client?.email;
   const timeline = reminderTimeline(invoice, rulesOf(state));
   const open = invoice.status !== 'paid';
   const who = clientEmail || clientName || 'your client';
@@ -77,7 +83,26 @@ function Reminders({
               {e.label}
               {e.state === 'paused' ? ' (paused)' : ''}
             </span>
-            {e.state === 'needs-ok' && e.step ? (
+            {e.state === 'needs-ok' && e.step === 'call21' ? (
+              <span className="timeline-actions">
+                <button
+                  ref={approveCall}
+                  className="btn btn-sm btn-primary"
+                  onClick={() => setCalling(true)}
+                >
+                  Approve call
+                </button>
+                <button
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => {
+                    dispatch({ type: 'skipCall', id: invoice.id });
+                    toast('Voice call skipped');
+                  }}
+                >
+                  Not now
+                </button>
+              </span>
+            ) : e.state === 'needs-ok' && e.step ? (
               <button
                 className="btn btn-sm btn-primary"
                 onClick={() => {
@@ -87,10 +112,83 @@ function Reminders({
               >
                 Approve and send
               </button>
+            ) : e.state === 'next' && e.step === 'call21' ? (
+              <span className="timeline-actions">
+                <button
+                  className="btn btn-sm"
+                  onClick={() => {
+                    dispatch({ type: 'resetCall', id: invoice.id });
+                    toast('Voice call cancelled');
+                  }}
+                >
+                  Cancel call
+                </button>
+                <Menu className="btn btn-sm btn-ghost" label="Prototype: simulate result">
+                  {(run) => (
+                    <>
+                      <button
+                        role="menuitem"
+                        onClick={run(() => {
+                          dispatch({
+                            type: 'finishCall',
+                            id: invoice.id,
+                            outcome: 'promised',
+                            payDate: addWorkingDays(invoice.call?.callDate ?? TODAY, 3),
+                          });
+                          toast('Call finished: promised to pay');
+                        })}
+                      >
+                        Promised to pay
+                      </button>
+                      <button
+                        role="menuitem"
+                        onClick={run(() => {
+                          dispatch({ type: 'finishCall', id: invoice.id, outcome: 'no-answer' });
+                          toast('Call finished: no answer');
+                        })}
+                      >
+                        No answer
+                      </button>
+                      <button
+                        role="menuitem"
+                        onClick={run(() => {
+                          dispatch({ type: 'finishCall', id: invoice.id, outcome: 'disputed' });
+                          toast('Call finished: disputed. Reminders paused.');
+                        })}
+                      >
+                        Disputed
+                      </button>
+                    </>
+                  )}
+                </Menu>
+              </span>
+            ) : e.state === 'skipped' ? (
+              <button
+                className="btn btn-sm btn-ghost"
+                onClick={() => dispatch({ type: 'resetCall', id: invoice.id })}
+              >
+                Offer again
+              </button>
             ) : null}
           </li>
         ))}
       </ol>
+
+      {calling ? (
+        <CallDialog
+          invoice={invoice}
+          client={client}
+          onClose={() => {
+            setCalling(false);
+            approveCall.current?.focus();
+          }}
+          onSchedule={(phone, callDate) => {
+            dispatch({ type: 'scheduleCall', id: invoice.id, phone, callDate });
+            setCalling(false);
+            toast(`Call scheduled for ${fmtDay(callDate)}`);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -333,7 +431,7 @@ export function InvoiceDetail() {
                 needsOk="It's sent only when you click Approve & send"
               />
             ) : (
-              <Reminders invoice={invoice} clientName={client?.name} clientEmail={client?.email} />
+              <Reminders invoice={invoice} client={client} />
             )}
 
             <AgentLog
@@ -373,9 +471,16 @@ function AgentLog({
     log.push({
       date: r.date,
       who: 'You',
-      what: r.step === 'manual' ? 'Sent a reminder by hand' : 'Approved the firmer reminder',
+      what:
+        r.step === 'manual'
+          ? 'Sent a reminder by hand'
+          : r.step === 'call21'
+            ? `Approved a voice call to ${clientName ?? 'the client'}`
+            : 'Approved the firmer reminder',
     });
   }
+  if (invoice.call?.status === 'done')
+    log.push({ date: invoice.call.callDate, who: 'Agent', what: outcomeText(invoice.call) });
   if (invoice.status === 'paid')
     log.push({ date: invoice.paidAt ?? approvedOn, who: 'You', what: 'Marked it as paid' });
 

@@ -6,7 +6,7 @@ import { fmtDate, invoiceTotal, money } from '../lib/format';
 import { TODAY } from '../lib/types';
 import type { Invoice } from '../lib/types';
 import { useSelectors, useStore } from '../lib/hooks';
-import { gettingPaid } from '../lib/reminders';
+import { gettingPaid, reminderTimeline, rulesOf } from '../lib/reminders';
 
 export function Dashboard() {
   const { state } = useStore();
@@ -81,6 +81,9 @@ export function Dashboard() {
   const paid = gettingPaid(state);
   const queueCount = pendingAgreements.length + pendingInvoices.length + paid.needsOk.length;
   const urgent = mostUrgent(state.invoices, paid.needsOk);
+  // The step waiting on you is either the firmer email or the voice call.
+  const callReady = (i: Invoice) =>
+    reminderTimeline(i, rulesOf(state)).some((e) => e.state === 'needs-ok' && e.step === 'call21');
   const urgentClient = urgent ? clientById(urgent.invoice.clientId) : undefined;
 
   return (
@@ -150,7 +153,9 @@ export function Dashboard() {
               </strong>
               <span>
                 {urgent.kind === 'reminder'
-                  ? 'Your agent drafted a firmer reminder. It won’t send until you approve it.'
+                  ? callReady(urgent.invoice)
+                    ? 'Your agent can call them about it. It won’t call until you approve.'
+                    : 'Your agent drafted a firmer reminder. It won’t send until you approve it.'
                   : urgent.kind === 'overdue'
                     ? 'Your agent is sending reminders by your rules.'
                     : 'Your agent drafted it from your logged hours. It won’t send until you approve it.'}
@@ -158,7 +163,9 @@ export function Dashboard() {
             </div>
             <button className="btn" onClick={() => navigate(`/invoices/${urgent.invoice.id}`)}>
               {urgent.kind === 'reminder'
-                ? 'Review reminder'
+                ? callReady(urgent.invoice)
+                  ? 'Review call'
+                  : 'Review reminder'
                 : urgent.kind === 'overdue'
                   ? 'View invoice'
                   : 'Review invoice'}
@@ -221,7 +228,10 @@ export function Dashboard() {
                     <span className="queue-ref num">{i.number}</span>
                     <strong className="queue-client">{c?.name}</strong>
                     <span className="queue-note">
-                      {daysLate(i)} days late. Your agent drafted a firmer reminder.
+                      {daysLate(i)} days late.{' '}
+                      {callReady(i)
+                        ? 'Your agent can call them about it.'
+                        : 'Your agent drafted a firmer reminder.'}
                     </span>
                     <span className="queue-status">
                       <Pill status="overdue" />
@@ -230,7 +240,7 @@ export function Dashboard() {
                       className="btn btn-sm queue-action"
                       onClick={() => navigate(`/invoices/${i.id}`)}
                     >
-                      Review reminder
+                      {callReady(i) ? 'Review call' : 'Review reminder'}
                     </button>
                   </li>
                 );
