@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Icon } from './Icon';
+import { Menu } from './Menu';
 import { Logo } from './ui';
 import { useSelectors, useStore } from '../lib/hooks';
 
@@ -17,93 +16,49 @@ function WorkspaceMenu() {
   const { dispatch, toast } = useStore();
   const { hasAnyData } = useSelectors();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-  const wrap = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    wrap.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        setOpen(false);
-        trigger.current?.focus();
-      }
-    }
-    function onClick(e: MouseEvent) {
-      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('mousedown', onClick);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onClick);
-    };
-  }, [open]);
-
-  function run(fn: () => void) {
-    setOpen(false);
-    fn();
-  }
 
   return (
-    <div className="menu-wrap" ref={wrap}>
-      <button
-        ref={trigger}
-        className="appbar-account"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-      >
-        Your workspace
-        <Icon name="chevron" />
-      </button>
-      {open ? (
-        <div className="menu" role="menu">
-          <button role="menuitem" onClick={() => run(() => navigate('/settings'))}>
+    <Menu label="Your workspace" className="appbar-account">
+      {(run) => (
+        <>
+          <button role="menuitem" onClick={run(() => navigate('/settings'))}>
             Settings
           </button>
           <div className="menu-sep" role="separator" />
           <button
             role="menuitem"
-            onClick={() =>
-              run(() => {
-                dispatch({ type: 'loadSample' });
-                toast('Sample data loaded');
-                navigate('/dashboard');
-              })
-            }
+            onClick={run(() => {
+              dispatch({ type: 'loadSample' });
+              toast('Sample data loaded');
+              navigate('/dashboard');
+            })}
           >
             Load sample data
           </button>
           {hasAnyData ? (
             <button
               role="menuitem"
-              onClick={() =>
-                run(() => {
-                  dispatch({ type: 'clear' });
-                  toast('Workspace cleared');
-                  navigate('/dashboard');
-                })
-              }
+              onClick={run(() => {
+                dispatch({ type: 'clear' });
+                toast('Workspace cleared');
+                navigate('/dashboard');
+              })}
             >
               Clear workspace
             </button>
           ) : null}
           <button
             role="menuitem"
-            onClick={() =>
-              run(() => {
-                dispatch({ type: 'signOut' });
-                navigate('/welcome');
-              })
-            }
+            onClick={run(() => {
+              dispatch({ type: 'signOut' });
+              navigate('/welcome');
+            })}
           >
             Sign-in screen
           </button>
-        </div>
-      ) : null}
-    </div>
+        </>
+      )}
+    </Menu>
   );
 }
 
