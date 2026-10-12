@@ -384,7 +384,9 @@ export function TaskForm() {
           </div>
 
           <div className="field">
-            <label>What did you work on?</label>
+            <label>
+              What did you work on? <span className="req" aria-hidden="true">*</span>
+            </label>
             <input type="text" name="title" placeholder="e.g. Homepage revisions" required />
           </div>
 
@@ -394,7 +396,9 @@ export function TaskForm() {
               <input type="date" name="date" defaultValue={WORKING_DATE} />
             </div>
             <div className="field">
-              <label>Hours</label>
+              <label>
+                Hours <span className="req" aria-hidden="true">*</span>
+              </label>
               <input
                 className="mono-input"
                 type="number"
@@ -415,6 +419,9 @@ export function TaskForm() {
               Cancel
             </Link>
           </div>
+        <p className="hint">
+          <span className="req" aria-hidden="true">*</span> Required
+        </p>
         </form>
       </div>
     </>
