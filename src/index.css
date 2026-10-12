@@ -537,7 +537,9 @@
   }
   .appbar-account:hover{background:var(--accent-soft);}
   .appbar-account svg{width:16px; height:16px;}
-  .appbar-account[aria-expanded="true"] svg{transform:rotate(180deg);}
+  .menu-trigger[aria-expanded="true"] svg:last-child{transform:rotate(180deg);}
+  .btn.menu-trigger{gap:6px;}
+  .btn.menu-trigger svg:last-child{width:16px; height:16px; margin-left:2px;}
   .appbar-link:focus-visible, .appbar-logo:focus-visible, .appbar-account:focus-visible, .menu [role="menuitem"]:focus-visible{
     outline:2px solid var(--brand); outline-offset:2px;
   }
@@ -731,7 +733,7 @@
   }
   @media (max-width: 760px){
     .appbar{flex-wrap:wrap; height:auto; gap:0 12px; padding:12px 16px 0 16px;}
-    .menu-wrap{margin-left:auto;}
+    .appbar .menu-wrap{margin-left:auto;}
     .appbar-nav{order:3; flex-basis:100%; justify-content:flex-start; gap:20px; height:44px; overflow-x:auto; scrollbar-width:none;}
     .topbar{padding:24px 16px 0 16px;}
     .content{padding:16px 16px 48px 16px;}

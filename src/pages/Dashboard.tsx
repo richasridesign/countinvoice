@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '../components/Icon';
+import { Menu } from '../components/Menu';
 import { Card, EmptyState, PaperStack, Pill, Topbar } from '../components/ui';
 import { fmtDate, invoiceTotal, money } from '../lib/format';
 import { TODAY } from '../lib/types';
@@ -87,14 +88,25 @@ export function Dashboard() {
       <Topbar
         title="Dashboard"
         actions={
-          <>
-            <button className="btn" onClick={() => navigate('/clients/new')}>
-              <Icon name="sign" /> Draft agreement
-            </button>
-            <button className="btn" onClick={() => navigate('/tasks/new')}>
-              <Icon name="plus" /> Log task
-            </button>
-          </>
+          <Menu
+            className="btn"
+            label={
+              <>
+                <Icon name="plus" /> New
+              </>
+            }
+          >
+            {(run) => (
+              <>
+                <button role="menuitem" onClick={run(() => navigate('/tasks/new'))}>
+                  Log task
+                </button>
+                <button role="menuitem" onClick={run(() => navigate('/clients/new'))}>
+                  Draft agreement
+                </button>
+              </>
+            )}
+          </Menu>
         }
       />
 
