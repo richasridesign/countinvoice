@@ -310,14 +310,20 @@ export function InvoiceDetail() {
             <div className="doc-provenance">
               <AgentMark />
               <span>
-                Prepared by your agent ·{' '}
+                Prepared by your agent
+                <span className="note-dot" aria-hidden="true">
+                  ·
+                </span>
                 {draft ? 'Waiting for your approval' : `Approved by you, ${fmtDate(approvedOn)}`}
               </span>
             </div>
 
             <div className="doc-note">
-              Status: <Pill status={invoice.status} /> · late payment accrues interest per the
-              governing agreement.
+              Status: <Pill status={invoice.status} />
+              <span className="note-dot" aria-hidden="true">
+                ·
+              </span>
+              late payment accrues interest per the governing agreement.
             </div>
           </div>
 

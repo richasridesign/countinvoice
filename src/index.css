@@ -265,6 +265,9 @@
   .milestone-row{display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px dashed var(--line); font-size:13.5px;}
   .milestone-row:last-child{border-bottom:none;}
   .doc-note{font-size:11.5px; color:var(--muted); font-style:italic; margin-top:24px; padding-top:14px; border-top:1px solid var(--line);}
+  /* A status tag inside a sentence gets room on both sides so it reads as its own item. */
+  .doc-note .pill{margin:0 4px 0 12px;}
+  .note-dot{margin:0 8px;}
   .doc-note-flag{
     font-style:normal; color:var(--ink); border-top:none; margin-top:20px;
     background:var(--line); padding:10px 14px; border-radius:4px; display:flex; align-items:flex-start; gap:8px;
