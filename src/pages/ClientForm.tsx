@@ -145,11 +145,8 @@ export function ClientForm() {
 
   return (
     <>
-      <Topbar eyebrow="Clients" title={editing ? 'Edit client' : 'Add a client'} />
+      <Topbar back={{ to: '/clients', label: '← All clients' }} title={editing ? 'Edit client' : 'Add a client'} />
       <div className="content">
-        <div className="breadcrumb">
-          <Link to="/clients">← All clients</Link>
-        </div>
 
         <form
           ref={form}

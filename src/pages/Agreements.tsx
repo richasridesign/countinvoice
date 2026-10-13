@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AgreementDoc } from '../components/AgreementDoc';
 import {
   DownloadButton,
@@ -193,8 +193,9 @@ export function AgreementDetail() {
   return (
     <>
       <Topbar
-        eyebrow="Agreement"
-        title={client.name}
+        narrow
+        back={{ to: `/clients/${client.id}`, label: `← ${client.name}` }}
+        title="Agreement"
         actions={
           <>
             {client.status === 'draft' ? (
@@ -227,11 +228,7 @@ export function AgreementDetail() {
         }
       />
 
-      <div className="content">
-        <div className="breadcrumb no-print">
-          <Link to={`/clients/${client.id}`}>← {client.name}</Link>
-        </div>
-
+      <div className="content content-doc">
         {proposal ? (
           <div className="share-strip share-strip-pending share-strip-stack no-print">
             <div>

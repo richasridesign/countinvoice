@@ -54,11 +54,10 @@ export function AgreementUpload() {
 
   return (
     <>
-      <Topbar eyebrow="Agreements" title={`Upload agreement for ${client.name}`} />
+      <Topbar
+        back={{ to: `/agreement/${client.id}`, label: '← Back to agreement' }}
+        title={`Upload agreement for ${client.name}`} />
       <div className="content">
-        <div className="breadcrumb">
-          <Link to={`/agreement/${client.id}`}>← Back to agreement</Link>
-        </div>
 
         <form className="form" onSubmit={onSubmit} style={{ marginTop: 10 }}>
           <AgreementUploadFields file={file} onFile={setFile} />

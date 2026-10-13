@@ -59,11 +59,8 @@ export function ReviewWeek() {
   if (!drafts.length) {
     return (
       <>
-        <Topbar eyebrow="Tasks" title="Review week" />
+        <Topbar back={{ to: '/tasks', label: '← All tasks' }} title="Review week" />
         <div className="content">
-          <div className="breadcrumb">
-            <Link to="/tasks">← All tasks</Link>
-          </div>
           <EmptyState
             title="Nothing to review"
             action={
@@ -92,7 +89,8 @@ export function ReviewWeek() {
   return (
     <>
       <Topbar
-        eyebrow={`Tasks · ${weekLabel(drafts)}`}
+        back={{ to: '/tasks', label: '← All tasks' }}
+        eyebrow={weekLabel(drafts)}
         title="Review week"
         actions={
           <>
@@ -106,9 +104,6 @@ export function ReviewWeek() {
         }
       />
       <div className="content">
-        <div className="breadcrumb">
-          <Link to="/tasks">← All tasks</Link>
-        </div>
 
         <div style={{ margin: '10px 0 16px 0' }}>
           <AgentNote
@@ -365,11 +360,8 @@ export function TaskForm() {
 
   return (
     <>
-      <Topbar eyebrow="Tasks" title="Log a task" />
+      <Topbar back={{ to: '/tasks', label: '← All tasks' }} title="Log a task" />
       <div className="content">
-        <div className="breadcrumb">
-          <Link to="/tasks">← All tasks</Link>
-        </div>
 
         <form className="form" onSubmit={onSubmit} style={{ marginTop: 10 }}>
           <div className="field">

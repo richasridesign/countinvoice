@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import type { PillStatus } from '../lib/types';
 
 /** Status in plain words: who it is waiting on, not just what it is. */
@@ -31,14 +32,25 @@ export function Topbar({
   eyebrow,
   title,
   actions,
+  back,
+  narrow = false,
 }: {
   eyebrow?: string;
   title: string;
   actions?: ReactNode;
+  /** The way back, above the title. Replaces a breadcrumb under the header. */
+  back?: { to: string; label: string };
+  /** Header sits in the same centred column as a document page. */
+  narrow?: boolean;
 }) {
   return (
-    <div className="topbar">
+    <div className={narrow ? 'topbar topbar-doc' : 'topbar'}>
       <div>
+        {back ? (
+          <Link className="back-link no-print" to={back.to}>
+            {back.label}
+          </Link>
+        ) : null}
         {eyebrow ? <div className="eyebrow">{eyebrow}</div> : null}
         <h1>{title}</h1>
       </div>
