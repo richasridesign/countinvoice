@@ -212,7 +212,7 @@ export function InvoiceDetail() {
   return (
     <>
       <Topbar
-        eyebrow="Invoice"
+        back={{ to: '/invoices', label: '← All invoices' }}
         title={invoice.number}
         actions={
           <>
@@ -233,9 +233,6 @@ export function InvoiceDetail() {
       />
 
       <div className="content">
-        <div className="breadcrumb no-print">
-          <Link to="/invoices">← All invoices</Link>
-        </div>
 
         <div className="doc-layout">
           <div className={draft ? 'doc doc-paper doc-draft' : 'doc doc-paper'}>

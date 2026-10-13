@@ -46,7 +46,7 @@ export function ClientDetail() {
   return (
     <>
       <Topbar
-        eyebrow="Client"
+        back={{ to: '/clients', label: '← All clients' }}
         title={client.name}
         actions={
           <>
@@ -69,9 +69,6 @@ export function ClientDetail() {
       />
 
       <div className="content">
-        <div className="breadcrumb">
-          <Link to="/clients">← All clients</Link>
-        </div>
 
         {confirmDelete ? (
           <div
